@@ -32,4 +32,47 @@
   .btn-accent {
     @apply bg-accent text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent;
   }
+
+  .btn-whatsapp {
+    @apply bg-whatsapp text-white hover:bg-whatsapp/90 hover:scale-105 transform transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-whatsapp shadow-lg hover:shadow-xl;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-center mb-8;
+  }
+
+  .section-subtitle {
+    @apply text-xl text-gray-600 text-center mb-12 max-w-3xl mx-auto;
+  }
+}
+
+/* Swiper Customization */
+.swiper-button-next,
+.swiper-button-prev {
+  @apply text-white bg-black/50 rounded-full w-10 h-10 backdrop-blur-sm !important;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  @apply text-base !important;
+}
+
+.swiper-pagination-bullet {
+  @apply bg-white/70 !important;
+}
+
+.swiper-pagination-bullet-active {
+  @apply bg-white !important;
+}
+
+.thumbs-swiper .swiper-slide-thumb-active img {
+  @apply opacity-100 ring-2 ring-primary !important;
+}
+
+.swiper-zoom-container {
+  @apply cursor-zoom-in;
+}
+
+.swiper-zoom-container.swiper-zoom-container-zoomed {
+  @apply cursor-zoom-out;
 } 

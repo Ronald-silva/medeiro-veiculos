@@ -6,7 +6,7 @@ export default function Header() {
 
   const handleWhatsApp = () => {
     const message = encodeURIComponent('Olá! Gostaria de saber mais sobre os carros disponíveis.')
-    window.open(`https://wa.me/5585988852900?text=${message}`, '_blank')
+    window.open(`https://api.whatsapp.com/send?phone=5585988852900&text=${message}`, '_blank')
   }
 
   return (
@@ -41,7 +41,7 @@ export default function Header() {
             </a>
             <button
               onClick={handleWhatsApp}
-              className="btn btn-primary"
+              className="btn btn-whatsapp"
             >
               <i className="fab fa-whatsapp mr-2"></i>
               WhatsApp
@@ -81,7 +81,7 @@ export default function Header() {
               </a>
               <button
                 onClick={handleWhatsApp}
-                className="btn btn-primary w-full"
+                className="btn btn-whatsapp w-full"
               >
                 <i className="fab fa-whatsapp mr-2"></i>
                 WhatsApp

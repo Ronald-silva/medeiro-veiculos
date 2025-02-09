@@ -4,6 +4,7 @@ import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import LeadForm from './components/LeadForm'
 import CarShowcase from './components/CarShowcase'
+import Testimonials from './components/Testimonials'
 import Footer from './components/Footer'
 
 function App() {
@@ -19,10 +20,11 @@ function App() {
         <Header />
         <main>
           <HeroSection onCtaClick={handleCtaClick} />
+          <CarShowcase />
           <div ref={formRef}>
             <LeadForm />
           </div>
-          <CarShowcase />
+          <Testimonials />
         </main>
         <Footer />
       </div>

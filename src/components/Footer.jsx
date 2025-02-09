@@ -19,7 +19,7 @@ export default function Footer() {
               viewport={{ once: true }}
               className="text-2xl md:text-3xl font-bold mb-4"
             >
-              Estoque Limitado!
+              🚗 Últimas Unidades! Reserve Seu Carro Agora!
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -28,7 +28,7 @@ export default function Footer() {
               viewport={{ once: true }}
               className="text-lg mb-6"
             >
-              Entre em contato agora e garanta as melhores condições
+              Não perca a oportunidade de garantir seu seminovo com as melhores condições do mercado
             </motion.p>
             <motion.button
               initial={{ opacity: 0, y: 20 }}
@@ -37,10 +37,10 @@ export default function Footer() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleWhatsApp}
-              className="btn btn-accent"
+              className="btn btn-whatsapp animate-pulse-slow"
             >
-              <i className="fab fa-whatsapp mr-2"></i>
-              Fale Conosco
+              <i className="fab fa-whatsapp mr-2 text-xl"></i>
+              Fale com um Consultor
             </motion.button>
           </div>
         </div>
@@ -91,22 +91,17 @@ export default function Footer() {
           {/* Redes Sociais */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Redes Sociais</h3>
+            <p className="text-sm mb-4">
+              📢 Acompanhe nossas ofertas exclusivas e avaliações de clientes no Instagram!
+            </p>
             <div className="flex justify-center space-x-4">
               <a 
-                href="https://instagram.com/medeiroveiculos" 
+                href="https://www.instagram.com/medeiro.veiculos/?igsh=aGt3dHExdWtxdng4" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-2xl hover:text-accent"
+                className="text-2xl hover:text-accent transform hover:scale-110 transition-transform duration-200"
               >
                 <i className="fab fa-instagram"></i>
-              </a>
-              <a 
-                href="https://facebook.com/medeiroveiculos" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-2xl hover:text-accent"
-              >
-                <i className="fab fa-facebook"></i>
               </a>
             </div>
           </div>
