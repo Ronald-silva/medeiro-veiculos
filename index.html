@@ -5,41 +5,50 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="mask-icon" href="/favicon.svg" color="#003B7E" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <meta name="theme-color" content="#003B7E" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="description" content="Medeiro Veículos - Os melhores seminovos de Fortaleza com as melhores condições" />
+    <meta name="description" content="Medeiro Veículos - Encontre os melhores seminovos premium de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
+    <meta name="keywords" content="seminovos fortaleza, carros usados fortaleza, financiamento de carros, honda hrv, toyota corolla, jeep compass" />
+    <meta name="author" content="Medeiro Veículos" />
+    <meta name="robots" content="index, follow" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://medeiroveiculos.com.br/" />
+    <meta property="og:url" content="https://medeiro-veiculos.vercel.app/" />
     <meta property="og:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
-    <meta property="og:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento" />
-    <meta property="og:image" content="https://medeiroveiculos.com.br/og-image.jpg" />
+    <meta property="og:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
+    <meta property="og:image" content="https://medeiro-veiculos.vercel.app/og-image.jpg" />
+    <meta property="og:image:alt" content="Medeiro Veículos - Showroom de carros seminovos premium" />
+    <meta property="og:locale" content="pt_BR" />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://medeiroveiculos.com.br/" />
-    <meta property="twitter:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
-    <meta property="twitter:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento" />
-    <meta property="twitter:image" content="https://medeiroveiculos.com.br/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://medeiro-veiculos.vercel.app/" />
+    <meta name="twitter:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
+    <meta name="twitter:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
+    <meta name="twitter:image" content="https://medeiro-veiculos.vercel.app/og-image.jpg" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Preconnect e Preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" as="style" />
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" />
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Fonts e Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'" />
 
-    <title>Medeiro Veículos - Seminovos Premium em Fortaleza</title>
+    <title>Medeiro Veículos - Seminovos Premium em Fortaleza | Carros Revisados e Garantia</title>
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
+    <script defer>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
+      gtag('config', 'G-XXXXXXXXXX', {
+        page_path: window.location.pathname,
+      });
     </script>
 
     <!-- Schema.org -->
@@ -48,8 +57,8 @@
         "@context": "https://schema.org",
         "@type": "AutoDealer",
         "name": "Medeiro Veículos",
-        "image": "https://medeiroveiculos.com.br/logo.png",
-        "description": "Os melhores seminovos de Fortaleza com as melhores condições de financiamento",
+        "image": "https://medeiro-veiculos.vercel.app/logo.png",
+        "description": "Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência.",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "Av. Américo Barreira, 909 - Loja 03",
@@ -63,7 +72,7 @@
           "latitude": "-3.7319",
           "longitude": "-38.5267"
         },
-        "url": "https://medeiroveiculos.com.br",
+        "url": "https://medeiro-veiculos.vercel.app",
         "telephone": "+5585988852900",
         "openingHoursSpecification": [
           {
@@ -78,12 +87,18 @@
             "opens": "08:00",
             "closes": "13:00"
           }
+        ],
+        "sameAs": [
+          "https://www.instagram.com/medeiro.veiculos/?igsh=aGt3dHExdWtxdng4"
         ]
       }
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.jsx" defer></script>
+    <noscript>
+      <p>Para uma melhor experiência, por favor, habilite o JavaScript no seu navegador.</p>
+    </noscript>
   </body>
 </html>

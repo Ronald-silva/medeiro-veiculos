@@ -1,0 +1,14 @@
+# https://medeiro-veiculos.vercel.app/
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://medeiro-veiculos.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10
+
+# Disallow
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*?* 
