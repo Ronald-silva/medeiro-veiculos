@@ -2,25 +2,49 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; font-src 'self' https: data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
+    
+    <!-- Performance Optimizations -->
+    <link rel="preload" href="/assets/css/index-BDnjum0V.css" as="style">
+    <link rel="preload" href="/assets/js/index-YhseHmva.js" as="script">
+    <link rel="modulepreload" href="/assets/js/react-CZeiVSm1.js">
+    <link rel="modulepreload" href="/assets/js/react-dom-BX9AauoQ.js">
+    
+    <!-- PWA -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="mask-icon" href="/favicon.svg" color="#003B7E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
     <meta name="theme-color" content="#003B7E" />
-    <meta name="description" content="Medeiro Veículos - Encontre os melhores seminovos premium de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
-    <meta name="keywords" content="seminovos fortaleza, carros usados fortaleza, financiamento de carros, honda hrv, toyota corolla, jeep compass" />
-    <meta name="author" content="Medeiro Veículos" />
-    <meta name="robots" content="index, follow" />
     
-    <!-- Preconnect e Preload -->
+    <!-- SEO -->
+    <title>Medeiro Veículos - Seminovos Premium em Fortaleza | Carros Revisados e Garantia</title>
+    <meta name="description" content="Medeiro Veículos - Encontre os melhores seminovos premium de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
+    <meta name="keywords" content="seminovos fortaleza, carros usados fortaleza, financiamento de carros, honda hrv, toyota corolla, jeep compass, carros premium, financiamento facilitado" />
+    <meta name="author" content="Medeiro Veículos" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    
+    <!-- Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     
-    <!-- Fonts e Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Fonts e Icons (com fallback) -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    </noscript>
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    </noscript>
 
-    <!-- Meta tags Open Graph e Twitter -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://medeiro-veiculos.vercel.app/" />
     <meta property="og:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
@@ -28,14 +52,14 @@
     <meta property="og:image" content="https://medeiro-veiculos.vercel.app/og-image.jpg" />
     <meta property="og:image:alt" content="Medeiro Veículos - Showroom de carros seminovos premium" />
     <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Medeiro Veículos" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://medeiro-veiculos.vercel.app/" />
     <meta name="twitter:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
     <meta name="twitter:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
     <meta name="twitter:image" content="https://medeiro-veiculos.vercel.app/og-image.jpg" />
-
-    <title>Medeiro Veículos - Seminovos Premium em Fortaleza | Carros Revisados e Garantia</title>
 
     <!-- Schema.org -->
     <script type="application/ld+json">
@@ -82,7 +106,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" crossorigin src="/src/main.jsx"></script>
+    <script type="module" crossorigin src="/src/main.jsx" defer></script>
     <noscript>
       <p>Para uma melhor experiência, por favor, habilite o JavaScript no seu navegador.</p>
     </noscript>

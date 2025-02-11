@@ -18,6 +18,7 @@ export default defineConfig({
       }
     }),
     VitePWA({
+      strategies: 'generateSW',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
@@ -43,7 +44,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,json,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -53,6 +54,20 @@ export default defineConfig({
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 ano
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/cdnjs\.cloudflare\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cdn-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 dias
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -71,7 +86,8 @@ export default defineConfig({
         optimizationLevel: 7
       },
       mozjpeg: {
-        quality: 75
+        quality: 75,
+        progressive: true
       },
       pngquant: {
         quality: [0.7, 0.8],
@@ -99,7 +115,8 @@ export default defineConfig({
       },
       webp: {
         quality: 75,
-        method: 6
+        method: 6,
+        autoFilter: true
       }
     })
   ],
@@ -107,8 +124,12 @@ export default defineConfig({
     port: 3000,
     host: true,
   },
+  preview: {
+    port: 3000,
+    host: true,
+  },
   build: {
-    target: 'es2020',
+    target: 'es2015',
     minify: 'terser',
     sourcemap: true,
     reportCompressedSize: true,
@@ -175,7 +196,7 @@ export default defineConfig({
         pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
         pure_getters: true,
         passes: 3,
-        ecma: 2020,
+        ecma: 2015,
         module: true,
         toplevel: true,
         unsafe_arrows: true,
@@ -185,7 +206,7 @@ export default defineConfig({
       },
       format: {
         comments: false,
-        ecma: 2020,
+        ecma: 2015,
         wrap_iife: true,
         preserve_annotations: false
       },
