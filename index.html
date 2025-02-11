@@ -12,6 +12,11 @@
     <meta name="author" content="Medeiro Veículos" />
     <meta name="robots" content="index, follow" />
     
+    <!-- Preload de recursos críticos -->
+    <link rel="modulepreload" href="/src/main.jsx" as="script" />
+    <link rel="modulepreload" href="/src/App.jsx" as="script" />
+    <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml" />
+    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://medeiro-veiculos.vercel.app/" />
@@ -96,7 +101,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx" defer></script>
+    <script type="module" src="/src/main.jsx"></script>
     <noscript>
       <p>Para uma melhor experiência, por favor, habilite o JavaScript no seu navegador.</p>
     </noscript>
