@@ -5,20 +5,10 @@ import viteImagemin from 'vite-plugin-imagemin'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/',
+  base: './',
   plugins: [
-    react({
-      jsxRuntime: 'automatic',
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }]
-        ],
-        compact: true,
-        minified: true
-      }
-    }),
+    react(),
     VitePWA({
-      strategies: 'generateSW',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
@@ -42,39 +32,6 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,json,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 ano
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/cdnjs\.cloudflare\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'cdn-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 dias
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
       }
     }),
     viteImagemin({
@@ -86,8 +43,7 @@ export default defineConfig({
         optimizationLevel: 7
       },
       mozjpeg: {
-        quality: 75,
-        progressive: true
+        quality: 75
       },
       pngquant: {
         quality: [0.7, 0.8],
@@ -98,25 +54,8 @@ export default defineConfig({
           {
             name: 'removeViewBox',
             active: false
-          },
-          {
-            name: 'removeEmptyAttrs',
-            active: true
-          },
-          {
-            name: 'cleanupIDs',
-            active: true
-          },
-          {
-            name: 'removeDimensions',
-            active: true
           }
         ]
-      },
-      webp: {
-        quality: 75,
-        method: 6,
-        autoFilter: true
       }
     })
   ],
@@ -129,101 +68,37 @@ export default defineConfig({
     host: true,
   },
   build: {
-    target: 'es2015',
-    minify: 'terser',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
     sourcemap: true,
+    minify: 'terser',
+    target: 'es2015',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 1000,
-    cssCodeSplit: true,
-    cssMinify: 'lightningcss',
-    assetsInlineLimit: 4096,
-    modulePreload: {
-      polyfill: true
-    },
     rollupOptions: {
+      input: {
+        main: './index.html'
+      },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react/jsx-runtime')) {
-              return 'react-jsx'
-            }
-            if (id.includes('react-dom')) {
-              return 'react-dom'
-            }
-            if (id.includes('react')) {
-              return 'react'
-            }
-            if (id.includes('framer-motion')) {
-              return 'framer-motion'
-            }
-            if (id.includes('swiper')) {
-              return 'swiper'
-            }
-            if (id.includes('@heroicons')) {
-              return 'icons'
-            }
-            if (id.includes('react-helmet')) {
-              return 'helmet'
-            }
+            if (id.includes('react')) return 'vendor-react'
+            if (id.includes('framer-motion')) return 'vendor-framer'
+            if (id.includes('swiper')) return 'vendor-swiper'
             return 'vendor'
           }
-          if (id.includes('src/components')) {
-            return 'components'
-          }
         },
-        assetFileNames: (assetInfo) => {
-          let extType = assetInfo.name.split('.').at(1);
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
-            extType = 'img';
-          }
-          return `assets/${extType}/[name]-[hash][extname]`;
-        },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        compact: true,
-        generatedCode: {
-          arrowFunctions: true,
-          constBindings: true,
-          objectShorthand: true,
-          preset: 'es2015'
-        }
-      },
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
+      }
     },
     terserOptions: {
       compress: {
         drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-        pure_getters: true,
-        passes: 3,
-        ecma: 2015,
-        module: true,
-        toplevel: true,
-        unsafe_arrows: true,
-        unsafe_methods: true,
-        unsafe_proto: true,
-        unsafe_undefined: true
-      },
-      format: {
-        comments: false,
-        ecma: 2015,
-        wrap_iife: true,
-        preserve_annotations: false
-      },
-      mangle: {
-        safari10: true,
-        toplevel: true,
-        module: true,
-        properties: {
-          regex: /^_/
-        }
-      },
-      module: true,
-      safari10: true
-    },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'framer-motion', 'swiper'],
-    exclude: ['@heroicons/react']
+        drop_debugger: true
+      }
+    }
   }
 })
