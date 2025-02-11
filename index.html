@@ -12,12 +12,15 @@
     <meta name="author" content="Medeiro Veículos" />
     <meta name="robots" content="index, follow" />
     
-    <!-- Preload de recursos críticos -->
-    <link rel="modulepreload" href="/src/main.jsx" as="script" />
-    <link rel="modulepreload" href="/src/App.jsx" as="script" />
-    <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml" />
+    <!-- Preconnect e Preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
-    <!-- Open Graph / Facebook -->
+    <!-- Fonts e Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <!-- Meta tags Open Graph e Twitter -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://medeiro-veiculos.vercel.app/" />
     <meta property="og:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
@@ -26,35 +29,13 @@
     <meta property="og:image:alt" content="Medeiro Veículos - Showroom de carros seminovos premium" />
     <meta property="og:locale" content="pt_BR" />
 
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://medeiro-veiculos.vercel.app/" />
     <meta name="twitter:title" content="Medeiro Veículos - Seminovos Premium em Fortaleza" />
     <meta name="twitter:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
     <meta name="twitter:image" content="https://medeiro-veiculos.vercel.app/og-image.jpg" />
 
-    <!-- Preconnect e Preload -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" as="style" />
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" />
-    
-    <!-- Fonts e Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'" />
-
     <title>Medeiro Veículos - Seminovos Premium em Fortaleza | Carros Revisados e Garantia</title>
-
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script defer>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX', {
-        page_path: window.location.pathname,
-      });
-    </script>
 
     <!-- Schema.org -->
     <script type="application/ld+json">
@@ -101,7 +82,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" crossorigin src="/src/main.jsx"></script>
     <noscript>
       <p>Para uma melhor experiência, por favor, habilite o JavaScript no seu navegador.</p>
     </noscript>
