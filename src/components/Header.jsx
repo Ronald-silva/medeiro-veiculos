@@ -1,13 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import Rating from './ui/Rating'
 
-export default function Header() {
+export default function Header({ onChatOpen }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  const handleWhatsApp = () => {
-    const message = encodeURIComponent('Olá! Gostaria de saber mais sobre os carros disponíveis.')
-    window.open(`https://api.whatsapp.com/send?phone=5585988852900&text=${message}`, '_blank')
-  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
@@ -19,32 +15,22 @@ export default function Header() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <a href="/" className="text-2xl font-bold text-primary">
-              Medeiro Veículos
+            <a href="/" className="flex items-center">
+              <h1 className="text-2xl md:text-3xl font-bold text-primary">
+                Medeiros Veículos
+              </h1>
             </a>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="tel:+5585988852900" className="text-gray-600 hover:text-primary">
-              <i className="fas fa-phone mr-2"></i>
-              (85) 98885-2900
-            </a>
-            <a 
-              href="https://maps.google.com/?q=Av. Américo Barreira, 909 - Loja 03, Fortaleza - CE" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gray-600 hover:text-primary"
-            >
-              <i className="fas fa-map-marker-alt mr-2"></i>
-              Av. Américo Barreira, 909
-            </a>
+          <nav className="hidden lg:flex items-center space-x-6">
+            <Rating score={4.9} reviews={127} showSource={false} />
             <button
-              onClick={handleWhatsApp}
-              className="btn btn-whatsapp"
+              onClick={onChatOpen}
+              className="btn btn-primary shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <i className="fab fa-whatsapp mr-2"></i>
-              WhatsApp
+              <i className="fas fa-robot mr-2"></i>
+              Consultor IA 24/7
             </button>
           </nav>
 
@@ -63,29 +49,26 @@ export default function Header() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden mt-4 pb-4"
+            className="lg:hidden mt-4 pb-4"
           >
             <div className="flex flex-col space-y-4">
-              <a href="tel:+5585988852900" className="text-gray-600 hover:text-primary">
+              <div className="text-center py-2">
+                <Rating score={4.9} reviews={127} showSource={false} />
+              </div>
+              <button
+                onClick={() => {
+                  onChatOpen();
+                  setIsMenuOpen(false);
+                }}
+                className="btn btn-primary w-full"
+              >
+                <i className="fas fa-robot mr-2"></i>
+                Consultor IA 24/7
+              </button>
+              <a href="tel:+5585988852900" className="text-gray-600 hover:text-primary text-center">
                 <i className="fas fa-phone mr-2"></i>
                 (85) 98885-2900
               </a>
-              <a 
-                href="https://maps.google.com/?q=Av. Américo Barreira, 909 - Loja 03, Fortaleza - CE" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-gray-600 hover:text-primary"
-              >
-                <i className="fas fa-map-marker-alt mr-2"></i>
-                Av. Américo Barreira, 909
-              </a>
-              <button
-                onClick={handleWhatsApp}
-                className="btn btn-whatsapp w-full"
-              >
-                <i className="fab fa-whatsapp mr-2"></i>
-                WhatsApp
-              </button>
             </div>
           </motion.div>
         )}

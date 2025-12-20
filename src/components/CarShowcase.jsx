@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CarGallery from './CarGallery'
+import InstallmentCalculator from './conversion/InstallmentCalculator'
+import Badge from './ui/Badge'
+import LiveViewers from './conversion/LiveViewers'
 
 const cars = [
   {
@@ -11,7 +14,9 @@ const cars = [
     image: '/cars/hrv.png',
     type: 'SUV',
     features: ['Automático', 'Flex', 'Completo'],
-    km: '35.000'
+    km: '35.000',
+    status: 'limited', // available, limited, sold
+    viewsToday: 87
   },
   {
     id: 2,
@@ -21,7 +26,9 @@ const cars = [
     image: '/cars/corolla.png',
     type: 'Sedan',
     features: ['Automático', 'Flex', 'Couro'],
-    km: '28.000'
+    km: '28.000',
+    status: 'available',
+    viewsToday: 124
   },
   {
     id: 3,
@@ -31,7 +38,9 @@ const cars = [
     image: '/cars/compass.png',
     type: 'SUV',
     features: ['Automático', 'Diesel', '4x4'],
-    km: '42.000'
+    km: '42.000',
+    status: 'limited',
+    viewsToday: 63
   }
 ]
 
@@ -93,7 +102,7 @@ export default function CarShowcase() {
 
         {/* Grid de Carros */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {filteredCars.map((car, index) => (
               <motion.div
                 key={car.id}
@@ -106,7 +115,7 @@ export default function CarShowcase() {
                 onMouseEnter={() => setHoveredCar(car.id)}
                 onMouseLeave={() => setHoveredCar(null)}
               >
-                <div 
+                <div
                   className="relative aspect-w-16 aspect-h-9 bg-gray-100 cursor-pointer"
                   onClick={() => setSelectedCar(car)}
                 >
@@ -116,6 +125,18 @@ export default function CarShowcase() {
                     className="object-cover w-full h-full"
                     loading="lazy"
                   />
+                  {/* Badges de Status */}
+                  <div className="absolute top-3 right-3 flex flex-col gap-2">
+                    {car.status === 'sold' && (
+                      <Badge variant="sold" icon="🚫">VENDIDO</Badge>
+                    )}
+                    {car.status === 'limited' && (
+                      <Badge variant="limited" icon="⚡" animate>Última unidade!</Badge>
+                    )}
+                    {car.viewsToday && (
+                      <LiveViewers count={car.viewsToday} variant="compact" />
+                    )}
+                  </div>
                 </div>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
@@ -159,6 +180,12 @@ export default function CarShowcase() {
                         Ver Fotos
                       </button>
                     </div>
+
+                    {/* Calculadora de Financiamento */}
+                    <InstallmentCalculator
+                      price={car.price}
+                      carName={car.name}
+                    />
                   </div>
                 </div>
               </motion.div>

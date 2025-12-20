@@ -1,0 +1,373 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../lib/supabaseClient';
+import InstallmentCalculator from './conversion/InstallmentCalculator';
+import Badge from './ui/Badge';
+
+export default function VehicleCatalog({ onVehicleInterest }) {
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState('Todos');
+  const [selectedBrand, setSelectedBrand] = useState('Todas');
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 });
+  const [showCalculator, setShowCalculator] = useState(null);
+
+  // Fetch vehicles from Supabase
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  async function fetchVehicles() {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('status', 'available')
+        .order('price', { ascending: true });
+
+      if (error) throw error;
+      setVehicles(data || []);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Get unique types and brands for filters
+  const types = ['Todos', ...new Set(vehicles.map(v => v.type))];
+  const brands = ['Todas', ...new Set(vehicles.map(v => v.brand).filter(Boolean))];
+
+  // Filter vehicles
+  const filteredVehicles = vehicles.filter(vehicle => {
+    const typeMatch = selectedType === 'Todos' || vehicle.type === selectedType;
+    const brandMatch = selectedBrand === 'Todas' || vehicle.brand === selectedBrand;
+    const priceMatch = vehicle.price >= priceRange.min && vehicle.price <= priceRange.max;
+    return typeMatch && brandMatch && priceMatch;
+  });
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price);
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="container">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="mt-4 text-gray-600">Carregando catálogo...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-16 bg-gray-50">
+      <div className="container">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <h2 className="section-title">Nosso Catálogo</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            {filteredVehicles.length} veículo{filteredVehicles.length !== 1 ? 's' : ''} disponível{filteredVehicles.length !== 1 ? 'eis' : ''} • Todos com garantia de 3 meses
+          </p>
+        </motion.div>
+
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          viewport={{ once: true }}
+          className="mb-8"
+        >
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Type Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Veículo
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {types.map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedType(type)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        selectedType === type
+                          ? 'bg-primary text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Brand Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Marca
+                </label>
+                <select
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  {brands.map(brand => (
+                    <option key={brand} value={brand}>{brand}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Faixa de Preço (até {formatPrice(priceRange.max)})
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="200000"
+                  step="5000"
+                  value={priceRange.max}
+                  onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Active Filters Summary */}
+            {(selectedType !== 'Todos' || selectedBrand !== 'Todas' || priceRange.max < 200000) && (
+              <div className="mt-4 flex items-center gap-2">
+                <span className="text-sm text-gray-600">Filtros ativos:</span>
+                {selectedType !== 'Todos' && (
+                  <Badge variant="primary">{selectedType}</Badge>
+                )}
+                {selectedBrand !== 'Todas' && (
+                  <Badge variant="primary">{selectedBrand}</Badge>
+                )}
+                {priceRange.max < 200000 && (
+                  <Badge variant="primary">Até {formatPrice(priceRange.max)}</Badge>
+                )}
+                <button
+                  onClick={() => {
+                    setSelectedType('Todos');
+                    setSelectedBrand('Todas');
+                    setPriceRange({ min: 0, max: 200000 });
+                  }}
+                  className="text-sm text-primary hover:underline ml-2"
+                >
+                  Limpar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Vehicle Grid */}
+        {filteredVehicles.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">Nenhum veículo encontrado com os filtros selecionados.</p>
+            <button
+              onClick={() => {
+                setSelectedType('Todos');
+                setSelectedBrand('Todas');
+                setPriceRange({ min: 0, max: 200000 });
+              }}
+              className="mt-4 text-primary hover:underline"
+            >
+              Ver todos os veículos
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <AnimatePresence>
+              {filteredVehicles.map((vehicle, index) => (
+                <motion.div
+                  key={vehicle.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300"
+                >
+                  {/* Vehicle Image */}
+                  <div className="relative aspect-w-16 aspect-h-10 bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <i className="fas fa-car text-6xl text-gray-400 mb-2"></i>
+                        <p className="text-sm text-gray-500">Imagens em breve</p>
+                      </div>
+                    </div>
+
+                    {/* Badge Overlay - Apenas se última unidade */}
+                    {vehicle.stock_count <= 1 && (
+                      <div className="absolute top-3 right-3">
+                        <Badge variant="limited" icon="⚡" animate>
+                          Última unidade!
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Vehicle Info */}
+                  <div className="p-6">
+                    {/* Type Badge */}
+                    {vehicle.type && (
+                      <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3">
+                        {vehicle.type}
+                      </span>
+                    )}
+
+                    {/* Brand & Name */}
+                    <div className="mb-3">
+                      {vehicle.brand && (
+                        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                          {vehicle.brand}
+                        </p>
+                      )}
+                      <h3 className="text-xl font-bold text-gray-900 mt-1">
+                        {vehicle.name}
+                      </h3>
+                    </div>
+
+                    {/* Specs */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {vehicle.year && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-calendar mr-2 text-primary"></i>
+                          {vehicle.year}
+                        </div>
+                      )}
+                      {vehicle.km > 0 && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-tachometer-alt mr-2 text-primary"></i>
+                          {vehicle.km.toLocaleString('pt-BR')} km
+                        </div>
+                      )}
+                      {vehicle.fuel && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-gas-pump mr-2 text-primary"></i>
+                          {vehicle.fuel}
+                        </div>
+                      )}
+                      {vehicle.transmission && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <i className="fas fa-cog mr-2 text-primary"></i>
+                          {vehicle.transmission}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Features */}
+                    {vehicle.features && vehicle.features.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {vehicle.features.slice(0, 3).map((feature, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {feature}
+                          </span>
+                        ))}
+                        {vehicle.features.length > 3 && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            +{vehicle.features.length - 3} mais
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Price */}
+                    <div className="border-t pt-4">
+                      <p className="text-3xl font-bold text-primary mb-2">
+                        {formatPrice(vehicle.price)}
+                      </p>
+
+                      {/* Calculator Toggle */}
+                      {showCalculator === vehicle.id ? (
+                        <div className="mb-4">
+                          <InstallmentCalculator
+                            price={vehicle.price}
+                            carName={vehicle.name}
+                            onConsultClick={() => {
+                              if (onVehicleInterest) onVehicleInterest(vehicle.name);
+                            }}
+                          />
+                          <button
+                            onClick={() => setShowCalculator(null)}
+                            className="text-sm text-gray-600 hover:text-gray-800 mt-2"
+                          >
+                            Ocultar simulação
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowCalculator(vehicle.id)}
+                          className="text-sm text-primary hover:underline mb-3"
+                        >
+                          <i className="fas fa-calculator mr-1"></i>
+                          Ver simulação de financiamento
+                        </button>
+                      )}
+
+                      {/* Action Button - APENAS Consultor IA */}
+                      <button
+                        onClick={() => {
+                          if (onVehicleInterest) onVehicleInterest(vehicle.name);
+                        }}
+                        className="w-full btn btn-primary"
+                      >
+                        <i className="fas fa-robot mr-2"></i>
+                        Falar com Consultor Especializado
+                      </button>
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Atendimento qualificado 24/7 • Resposta imediata
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Footer CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="text-center mt-12"
+        >
+          <p className="text-gray-600 mb-4">
+            Não encontrou o que procura?
+          </p>
+          <button
+            onClick={() => {
+              if (onVehicleInterest) onVehicleInterest('Catálogo Completo');
+            }}
+            className="btn btn-accent"
+          >
+            <i className="fas fa-robot mr-2"></i>
+            Fale com nosso Consultor IA 24/7
+          </button>
+        </motion.div>
+      </div>
+    </section>
+  );
+}

@@ -1,8 +1,20 @@
-# React + Vite
+# 🚗 Medeiros Veículos - Landing Page com Agente de IA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Landing page de alta conversão para venda de veículos seminovos com agente de IA integrado.
 
-Currently, two official plugins are available:
+## 🚀 Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
+
+Acesse: http://localhost:3000
+
+## 📋 Configuração
+
+Veja [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) para instruções completas.
+
+---
+
+**Medeiros Veículos** - WhatsApp: (85) 98885-2900

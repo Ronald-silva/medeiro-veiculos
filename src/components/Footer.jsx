@@ -1,51 +1,8 @@
 import { motion } from 'framer-motion'
 
 export default function Footer() {
-  const handleWhatsApp = () => {
-    const message = encodeURIComponent('Olá! Gostaria de saber mais sobre os carros disponíveis.')
-    window.open(`https://wa.me/5585988852900?text=${message}`, '_blank')
-  }
-
   return (
     <footer className="bg-gray-900 text-white">
-      {/* CTA Section */}
-      <div className="bg-primary">
-        <div className="container py-12">
-          <div className="text-center">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="text-2xl md:text-3xl font-bold mb-4"
-            >
-              🚗 Últimas Unidades! Reserve Seu Carro Agora!
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              viewport={{ once: true }}
-              className="text-lg mb-6"
-            >
-              Não perca a oportunidade de garantir seu seminovo com as melhores condições do mercado
-            </motion.p>
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleWhatsApp}
-              className="btn btn-whatsapp animate-pulse-slow"
-            >
-              <i className="fab fa-whatsapp mr-2 text-xl"></i>
-              Fale com um Consultor
-            </motion.button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Footer */}
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
@@ -108,8 +65,13 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
-          <p>© {new Date().getFullYear()} Medeiro Veículos. Todos os direitos reservados.</p>
+        <div className="border-t border-gray-800 mt-12 pt-8 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Medeiros Veículos
+          </h2>
+          <p className="text-sm text-gray-400">
+            © {new Date().getFullYear()} Medeiros Veículos. Todos os direitos reservados.
+          </p>
         </div>
       </div>
     </footer>

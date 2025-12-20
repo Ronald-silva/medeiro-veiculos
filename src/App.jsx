@@ -1,32 +1,41 @@
-import { useRef } from 'react'
+import { useState } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
-import LeadForm from './components/LeadForm'
-import CarShowcase from './components/CarShowcase'
+import VehicleCatalog from './components/VehicleCatalog'
 import Testimonials from './components/Testimonials'
 import Footer from './components/Footer'
+import ConversationalLeadForm from './components/ConversationalLeadForm/ConversationalLeadForm'
+import TrustSignals from './components/conversion/TrustSignals'
 
 function App() {
-  const formRef = useRef(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const handleCtaClick = () => {
-    formRef.current?.scrollIntoView({ behavior: 'smooth' })
+    setIsChatOpen(true)
+  }
+
+  const handleChatClose = () => {
+    setIsChatOpen(false)
   }
 
   return (
     <HelmetProvider>
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <Header onChatOpen={() => setIsChatOpen(true)} />
         <main>
           <HeroSection onCtaClick={handleCtaClick} />
-          <CarShowcase />
-          <div ref={formRef}>
-            <LeadForm />
-          </div>
+          <TrustSignals />
+          <VehicleCatalog onVehicleInterest={(carName) => setIsChatOpen(true)} />
           <Testimonials />
         </main>
         <Footer />
+
+        {/* Chat Conversacional */}
+        <ConversationalLeadForm
+          isOpen={isChatOpen}
+          onClose={handleChatClose}
+        />
       </div>
     </HelmetProvider>
   )
