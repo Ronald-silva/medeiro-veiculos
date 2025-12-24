@@ -27,7 +27,7 @@ const openai = USE_OPENAI ? new OpenAI({
 const CONFIG = {
   anthropic: {
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
+    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 256,
     temperature: 0.7
   },
   openai: {
@@ -319,9 +319,9 @@ function saveMessage(conversationId, role, content) {
 
   history.push({ role, content, timestamp: new Date().toISOString() });
 
-  // Limitar histórico a apenas 6 mensagens para evitar timeout no Vercel
-  // Isso mantém 3 trocas (user + assistant) - otimizado para serverless
-  const limitedHistory = history.slice(-6);
+  // Limitar histórico a apenas 2 mensagens para evitar timeout no Vercel FREE
+  // Isso mantém 1 troca (user + assistant) - ultra otimizado para plano gratuito
+  const limitedHistory = history.slice(-2);
 
   conversationCache.set(conversationId, {
     messages: limitedHistory,
