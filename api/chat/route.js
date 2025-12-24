@@ -27,7 +27,7 @@ const openai = USE_OPENAI ? new OpenAI({
 const CONFIG = {
   anthropic: {
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 1024,
+    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
     temperature: 0.7
   },
   openai: {
@@ -319,9 +319,9 @@ function saveMessage(conversationId, role, content) {
 
   history.push({ role, content, timestamp: new Date().toISOString() });
 
-  // Limitar histórico a apenas 10 mensagens para evitar problemas com tool_use
-  // Isso mantém 5 trocas (user + assistant)
-  const limitedHistory = history.slice(-10);
+  // Limitar histórico a apenas 6 mensagens para evitar timeout no Vercel
+  // Isso mantém 3 trocas (user + assistant) - otimizado para serverless
+  const limitedHistory = history.slice(-6);
 
   conversationCache.set(conversationId, {
     messages: limitedHistory,
@@ -340,6 +340,16 @@ function cleanupCache() {
   }
 }
 
+// Helper para timeout
+function withTimeout(promise, timeoutMs) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+    )
+  ]);
+}
+
 // Chat usando Anthropic Claude
 async function chatWithClaude(messages, convId) {
   const claudeTools = convertToolsForClaude(TOOL_DEFINITIONS);
@@ -355,14 +365,18 @@ async function chatWithClaude(messages, convId) {
   console.log(`📨 Sending ${cleanMessages.length} messages to Claude`);
 
   // Claude precisa do system message separado
-  const response = await anthropic.messages.create({
-    model: CONFIG.anthropic.model,
-    max_tokens: CONFIG.anthropic.maxTokens,
-    temperature: CONFIG.anthropic.temperature,
-    system: AGENT_SYSTEM_PROMPT,
-    messages: cleanMessages,
-    tools: claudeTools
-  });
+  // Timeout de 8s (antes do limite de 10s do Vercel)
+  const response = await withTimeout(
+    anthropic.messages.create({
+      model: CONFIG.anthropic.model,
+      max_tokens: CONFIG.anthropic.maxTokens,
+      temperature: CONFIG.anthropic.temperature,
+      system: AGENT_SYSTEM_PROMPT,
+      messages: cleanMessages,
+      tools: claudeTools
+    }),
+    8000
+  );
 
   // Se Claude quis usar tool(s)
   if (response.stop_reason === 'tool_use') {
@@ -421,14 +435,17 @@ async function chatWithClaude(messages, convId) {
       console.log(`🔍 DEBUG: Sending ${messagesWithToolResult.length} messages to Claude after tool execution`);
       console.log(`🔍 DEBUG: Processed ${toolResults.length} tool results`);
 
-      const finalResponse = await anthropic.messages.create({
-        model: CONFIG.anthropic.model,
-        max_tokens: CONFIG.anthropic.maxTokens,
-        temperature: CONFIG.anthropic.temperature,
-        system: AGENT_SYSTEM_PROMPT,
-        messages: messagesWithToolResult,
-        tools: claudeTools
-      });
+      const finalResponse = await withTimeout(
+        anthropic.messages.create({
+          model: CONFIG.anthropic.model,
+          max_tokens: CONFIG.anthropic.maxTokens,
+          temperature: CONFIG.anthropic.temperature,
+          system: AGENT_SYSTEM_PROMPT,
+          messages: messagesWithToolResult,
+          tools: claudeTools
+        }),
+        8000
+      );
 
       const textBlock = finalResponse.content.find(block => block.type === 'text');
       const responseMessage = textBlock?.text || 'Desculpe, não entendi.';
