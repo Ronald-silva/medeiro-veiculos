@@ -59,13 +59,18 @@ app.post('/api/chat/route', async (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
+  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-');
+  const hasOpenAI = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your-');
+
   res.json({
     status: 'ok',
     service: 'medeiros-veiculos-api',
+    aiProvider: hasAnthropic ? 'claude-3.5-sonnet' : (hasOpenAI ? 'gpt-4o' : 'none'),
     timestamp: new Date().toISOString(),
     env: {
-      openai: !!process.env.OPENAI_API_KEY,
+      anthropic: hasAnthropic,
+      openai: hasOpenAI,
       supabase: !!process.env.VITE_SUPABASE_URL
     }
   });

@@ -24,6 +24,13 @@ export default function Header({ onChatOpen }) {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
+            <a
+              href="/catalogo"
+              className="text-gray-700 hover:text-primary font-medium transition-colors"
+            >
+              <i className="fas fa-car mr-2"></i>
+              Nossos Veículos
+            </a>
             <Rating score={4.9} reviews={127} showSource={false} />
             <button
               onClick={onChatOpen}
@@ -52,6 +59,14 @@ export default function Header({ onChatOpen }) {
             className="lg:hidden mt-4 pb-4"
           >
             <div className="flex flex-col space-y-4">
+              <a
+                href="/catalogo"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-gray-700 hover:text-primary text-center font-medium py-2"
+              >
+                <i className="fas fa-car mr-2"></i>
+                Nossos Veículos
+              </a>
               <div className="text-center py-2">
                 <Rating score={4.9} reviews={127} showSource={false} />
               </div>

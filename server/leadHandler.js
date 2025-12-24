@@ -1,9 +1,16 @@
 'use strict';
 const crypto = require('crypto');
 const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
 
-const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || '5599999999999'; // Altere para seu número WhatsApp (código do país + DDD + número)
-const WEBHOOK_URL = process.env.LEAD_WEBHOOK_URL || ''; // Opcional: URL do CRM para receber leads
+const WHATSAPP_NUMBER = process.env.SELLER_WHATSAPP || process.env.WHATSAPP_NUMBER || '5585988852900';
+const WEBHOOK_URL = process.env.LEAD_WEBHOOK_URL || '';
+
+// Supabase client
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || '',
+  process.env.VITE_SUPABASE_ANON_KEY || ''
+);
 
 function generateId() {
   const ts = Date.now().toString(36);
@@ -45,18 +52,55 @@ function qualifyLead(lead) {
   return { score, priority };
 }
 
+async function saveToSupabase(lead, qualification) {
+  try {
+    const { data, error } = await supabase
+      .from('leads')
+      .insert([{
+        nome: lead.name,
+        whatsapp: lead.phone,
+        email: lead.email || null,
+        tipo_carro: lead.interest || 'Não especificado',
+        orcamento: null,
+        status: 'novo',
+        score: qualification.score,
+        source: lead.utm.source || 'website',
+        notes: JSON.stringify(lead.utm)
+      }])
+      .select();
+
+    if (error) {
+      console.error('Erro ao salvar lead no Supabase:', error);
+      return null;
+    }
+
+    console.log('✅ Lead salvo no CRM:', data[0]);
+    return data[0];
+  } catch (err) {
+    console.error('Erro ao salvar no Supabase:', err);
+    return null;
+  }
+}
+
 async function dispatchLead(lead) {
+  // Qualifica o lead
+  const qualification = qualifyLead(lead);
+
+  // Salva automaticamente no Supabase (CRM)
+  await saveToSupabase(lead, qualification);
+
   // Optional: send to CRM/webhook
   if (WEBHOOK_URL) {
     try {
-      await axios.post(WEBHOOK_URL, { lead });
+      await axios.post(WEBHOOK_URL, { lead, qualification });
     } catch (err) {
       // ignore webhook failures for now
     }
   }
+
   const msg = `Olá, tenho interesse em ${lead.interest}. Nome: ${lead.name}. Telefone: ${lead.phone}. LeadID: ${lead.id}`;
   const chatLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-  return { chatLink };
+  return { chatLink, savedToCRM: true };
 }
 
 module.exports = { createLead, qualifyLead, dispatchLead };

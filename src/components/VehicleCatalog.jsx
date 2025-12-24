@@ -1,48 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabaseClient';
+import { getFeaturedCars } from '../data/carsInventory';
 import InstallmentCalculator from './conversion/InstallmentCalculator';
 import Badge from './ui/Badge';
 
 export default function VehicleCatalog({ onVehicleInterest }) {
-  const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [vehicles] = useState(getFeaturedCars()); // Usa carros em destaque
   const [selectedType, setSelectedType] = useState('Todos');
   const [selectedBrand, setSelectedBrand] = useState('Todas');
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 300000 });
   const [showCalculator, setShowCalculator] = useState(null);
 
-  // Fetch vehicles from Supabase
-  useEffect(() => {
-    fetchVehicles();
-  }, []);
-
-  async function fetchVehicles() {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('vehicles')
-        .select('*')
-        .eq('status', 'available')
-        .order('price', { ascending: true });
-
-      if (error) throw error;
-      setVehicles(data || []);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      setVehicles([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   // Get unique types and brands for filters
-  const types = ['Todos', ...new Set(vehicles.map(v => v.type))];
+  const types = ['Todos', ...new Set(vehicles.map(v => v.category))];
   const brands = ['Todas', ...new Set(vehicles.map(v => v.brand).filter(Boolean))];
 
   // Filter vehicles
   const filteredVehicles = vehicles.filter(vehicle => {
-    const typeMatch = selectedType === 'Todos' || vehicle.type === selectedType;
+    const typeMatch = selectedType === 'Todos' || vehicle.category === selectedType;
     const brandMatch = selectedBrand === 'Todas' || vehicle.brand === selectedBrand;
     const priceMatch = vehicle.price >= priceRange.min && vehicle.price <= priceRange.max;
     return typeMatch && brandMatch && priceMatch;
@@ -51,22 +26,10 @@ export default function VehicleCatalog({ onVehicleInterest }) {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
+      minimumFractionDigits: 0
     }).format(price);
   };
-
-  if (loading) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="container">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <p className="mt-4 text-gray-600">Carregando catálogo...</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="py-16 bg-gray-50">
@@ -206,19 +169,19 @@ export default function VehicleCatalog({ onVehicleInterest }) {
                   className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300"
                 >
                   {/* Vehicle Image */}
-                  <div className="relative aspect-w-16 aspect-h-10 bg-gradient-to-br from-gray-100 to-gray-200">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center p-6">
-                        <i className="fas fa-car text-6xl text-gray-400 mb-2"></i>
-                        <p className="text-sm text-gray-500">Imagens em breve</p>
-                      </div>
-                    </div>
+                  <div className="relative h-64 bg-gray-900 overflow-hidden">
+                    <img
+                      src={vehicle.images[0]}
+                      alt={vehicle.name}
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                    />
 
-                    {/* Badge Overlay - Apenas se última unidade */}
-                    {vehicle.stock_count <= 1 && (
+                    {/* Badge Overlay - Se em destaque */}
+                    {vehicle.featured && (
                       <div className="absolute top-3 right-3">
-                        <Badge variant="limited" icon="⚡" animate>
-                          Última unidade!
+                        <Badge variant="limited" icon="⭐" animate>
+                          Em Destaque
                         </Badge>
                       </div>
                     )}
@@ -226,51 +189,44 @@ export default function VehicleCatalog({ onVehicleInterest }) {
 
                   {/* Vehicle Info */}
                   <div className="p-6">
-                    {/* Type Badge */}
-                    {vehicle.type && (
-                      <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3">
-                        {vehicle.type}
-                      </span>
-                    )}
+                    {/* Category Badge */}
+                    <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3 capitalize">
+                      {vehicle.category === 'pickup' ? 'Picape' :
+                       vehicle.category === 'suv' ? 'SUV' :
+                       vehicle.category === 'hatch' ? 'Hatch' :
+                       vehicle.category === 'motorcycle' ? 'Moto' :
+                       vehicle.category}
+                    </span>
 
                     {/* Brand & Name */}
                     <div className="mb-3">
-                      {vehicle.brand && (
-                        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
-                          {vehicle.brand}
-                        </p>
-                      )}
+                      <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+                        {vehicle.brand}
+                      </p>
                       <h3 className="text-xl font-bold text-gray-900 mt-1">
                         {vehicle.name}
                       </h3>
+                      <p className="text-sm text-gray-600 mt-1">{vehicle.version}</p>
                     </div>
 
                     {/* Specs */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
-                      {vehicle.year && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-calendar mr-2 text-primary"></i>
-                          {vehicle.year}
-                        </div>
-                      )}
-                      {vehicle.km > 0 && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-tachometer-alt mr-2 text-primary"></i>
-                          {vehicle.km.toLocaleString('pt-BR')} km
-                        </div>
-                      )}
-                      {vehicle.fuel && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-gas-pump mr-2 text-primary"></i>
-                          {vehicle.fuel}
-                        </div>
-                      )}
-                      {vehicle.transmission && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <i className="fas fa-cog mr-2 text-primary"></i>
-                          {vehicle.transmission}
-                        </div>
-                      )}
+                      <div className="flex items-center text-sm text-gray-600">
+                        <i className="fas fa-calendar mr-2 text-primary"></i>
+                        {vehicle.year}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <i className="fas fa-tachometer-alt mr-2 text-primary"></i>
+                        {vehicle.mileage}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <i className="fas fa-gas-pump mr-2 text-primary"></i>
+                        {vehicle.fuel}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <i className="fas fa-cog mr-2 text-primary"></i>
+                        {vehicle.transmission}
+                      </div>
                     </div>
 
                     {/* Features */}
@@ -352,11 +308,20 @@ export default function VehicleCatalog({ onVehicleInterest }) {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="text-center mt-12"
+          className="text-center mt-12 space-y-4"
         >
-          <p className="text-gray-600 mb-4">
-            Não encontrou o que procura?
+          <a
+            href="/catalogo"
+            className="inline-block btn btn-primary"
+          >
+            <i className="fas fa-car mr-2"></i>
+            Ver Catálogo Completo com Todas as Fotos
+          </a>
+
+          <p className="text-gray-600">
+            Ou fale diretamente com nosso consultor
           </p>
+
           <button
             onClick={() => {
               if (onVehicleInterest) onVehicleInterest('Catálogo Completo');
@@ -364,7 +329,7 @@ export default function VehicleCatalog({ onVehicleInterest }) {
             className="btn btn-accent"
           >
             <i className="fas fa-robot mr-2"></i>
-            Fale com nosso Consultor IA 24/7
+            Consultor IA 24/7
           </button>
         </motion.div>
       </div>
