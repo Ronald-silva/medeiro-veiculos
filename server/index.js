@@ -62,16 +62,9 @@ app.post('/api/chat/route', async (req, res) => {
   }
 });
 
-// Rota catch-all para servir o index.html do frontend
-// Isso é necessário para que o React Router funcione corretamente
-app.get('*', (req, res) => {
-  // Se o caminho não começar com /api, sirva o app do frontend
-  if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(buildPath, 'index.html'));
-  } else {
-    // Se for uma rota /api não encontrada, retorne 404
-    res.status(404).json({ error: 'Endpoint not found' });
-  }
+// Rota catch-all para servir o index.html do frontend para rotas do React Router
+app.get(/^(?!\/api)/, (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
 
 // Health check
