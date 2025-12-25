@@ -12,11 +12,15 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 
 const app = express();
-const PORT = process.env.API_PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Servir arquivos estáticos do frontend (Vite build)
+const buildPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(buildPath));
 
 // Importa dinamicamente o handler do chat
 let chatHandler;
@@ -55,6 +59,18 @@ app.post('/api/chat/route', async (req, res) => {
       message: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
+  }
+});
+
+// Rota catch-all para servir o index.html do frontend
+// Isso é necessário para que o React Router funcione corretamente
+app.get('*', (req, res) => {
+  // Se o caminho não começar com /api, sirva o app do frontend
+  if (!req.path.startsWith('/api/')) {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  } else {
+    // Se for uma rota /api não encontrada, retorne 404
+    res.status(404).json({ error: 'Endpoint not found' });
   }
 });
 
