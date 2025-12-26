@@ -17,11 +17,11 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a 
-                  href="https://maps.google.com/?q=Av. Américo Barreira, 909 - Loja 03, Fortaleza - CE" 
-                  target="_blank" 
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-accent"
+                  className="hover:text-accent inline-block"
                 >
                   <i className="fas fa-map-marker-alt mr-2"></i>
                   Av. Américo Barreira, 909 - Loja 03

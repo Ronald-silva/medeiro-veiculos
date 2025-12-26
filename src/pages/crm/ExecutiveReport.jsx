@@ -6,6 +6,7 @@ import {
   PrinterIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline'
+import { formatCurrency } from '../../utils/calculations'
 
 export default function ExecutiveReport() {
   const [period, setPeriod] = useState('month') // month, week, all
@@ -91,14 +92,6 @@ export default function ExecutiveReport() {
   }
 
   const metrics = calculateMetrics()
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0
-    }).format(value || 0)
-  }
 
   const handlePrint = () => {
     window.print()

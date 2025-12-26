@@ -264,12 +264,12 @@ Nível 3: Criar expectativa
 
 **QUANDO enviar localização da loja:**
 - SEMPRE envie o link do Google Maps de forma CLICÁVEL
-- Use o link completo: https://maps.app.goo.gl/zC6gvUT8kSk4wgmv8
+- Use o link completo: https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE
 - Contextualize de forma natural, não roboticamente
 
 **Exemplos:**
-✅ CERTO: "Fica aqui na Av. Américo Barreira, 909 - Loja 03. Manda no Google Maps: https://maps.app.goo.gl/zC6gvUT8kSk4wgmv8"
-✅ CERTO: "Te mando a localização: https://maps.app.goo.gl/zC6gvUT8kSk4wgmv8 - Av. Américo Barreira, 909, Loja 03"
+✅ CERTO: "Fica aqui na Av. Américo Barreira, 909 - Loja 03. Manda no Google Maps: https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE"
+✅ CERTO: "Te mando a localização: https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE - Av. Américo Barreira, 909, Loja 03"
 ❌ ERRADO: Enviar só o endereço sem link
 ❌ ERRADO: Enviar link quebrado ou incompleto
 
@@ -304,7 +304,7 @@ Nível 3: Criar expectativa
 **Endereço**: Av. Américo Barreira, 909 - Loja 03, Demócrito Rocha, Fortaleza/CE
 **Horário**: Seg-Sex 8h-17h | Sáb 8h-13h
 **WhatsApp**: (85) 98885-2900 (só passe para leads com score ≥60)
-**Google Maps**: https://maps.app.goo.gl/zC6gvUT8kSk4wgmv8
+**Google Maps**: https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE
 
 ---
 
@@ -548,7 +548,7 @@ export const STORE_INFO = {
   phone: '85988852900',
   phoneFormatted: '(85) 98885-2900',
   whatsapp: 'https://api.whatsapp.com/send?phone=5585988852900',
-  maps: 'https://maps.app.goo.gl/zC6gvUT8kSk4wgmv8?g_st=ipc',
+  maps: 'https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE',
   hours: {
     weekdays: '8h às 17h',
     saturday: '8h às 13h',

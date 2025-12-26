@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFeaturedCars } from '../data/carsInventory';
-import InstallmentCalculator from './conversion/InstallmentCalculator';
 import Badge from './ui/Badge';
 
 export default function VehicleCatalog({ onVehicleInterest }) {
@@ -9,7 +8,6 @@ export default function VehicleCatalog({ onVehicleInterest }) {
   const [selectedType, setSelectedType] = useState('Todos');
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300000 });
-  const [showCalculator, setShowCalculator] = useState(null);
 
   // Get unique types and brands for filters
   const types = ['Todos', ...new Set(vehicles.map(v => v.category))];
@@ -250,36 +248,9 @@ export default function VehicleCatalog({ onVehicleInterest }) {
 
                     {/* Price */}
                     <div className="border-t pt-4">
-                      <p className="text-3xl font-bold text-primary mb-2">
+                      <p className="text-3xl font-bold text-primary mb-4">
                         {formatPrice(vehicle.price)}
                       </p>
-
-                      {/* Calculator Toggle */}
-                      {showCalculator === vehicle.id ? (
-                        <div className="mb-4">
-                          <InstallmentCalculator
-                            price={vehicle.price}
-                            carName={vehicle.name}
-                            onConsultClick={() => {
-                              if (onVehicleInterest) onVehicleInterest(vehicle.name);
-                            }}
-                          />
-                          <button
-                            onClick={() => setShowCalculator(null)}
-                            className="text-sm text-gray-600 hover:text-gray-800 mt-2"
-                          >
-                            Ocultar simulação
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setShowCalculator(vehicle.id)}
-                          className="text-sm text-primary hover:underline mb-3"
-                        >
-                          <i className="fas fa-calculator mr-1"></i>
-                          Ver simulação de financiamento
-                        </button>
-                      )}
 
                       {/* Action Button - APENAS Consultor IA */}
                       <button

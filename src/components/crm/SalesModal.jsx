@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { createSale } from '../../lib/supabase'
+import { formatCurrency } from '../../utils/calculations'
+
+// ✅ COMISSÃO FIXA: R$ 300 por venda (fase de validação)
+const FIXED_COMMISSION = 300.00
 
 // Veículos populares pré-configurados
 const POPULAR_VEHICLES = [
@@ -26,9 +30,9 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
     installments: '',
     seller_name: 'Adel',
     sale_date: new Date().toISOString().split('T')[0],
-    commission_rate: 3.00,
-    ronald_split_percentage: 50.00, // % da comissão para Ronald
-    adel_split_percentage: 50.00     // % da comissão para Adel
+    commission_rate: 0.30, // Taxa simbólica (não usada no cálculo)
+    ronald_split_percentage: 100.00, // Ronald recebe 100% da comissão fixa
+    adel_split_percentage: 0.00      // Adel recebe 0% (fase de validação)
   })
 
   const [showVehicleSuggestions, setShowVehicleSuggestions] = useState(false)
@@ -41,11 +45,10 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Calcula comissão e divisão automaticamente
+  // ✅ COMISSÃO FIXA: R$ 300,00 por venda (independente do valor)
   useEffect(() => {
     const price = Number(formData.sale_price) || 0
-    const rate = Number(formData.commission_rate) || 0
-    const commissionValue = (price * rate) / 100
+    const commissionValue = FIXED_COMMISSION // R$ 300 fixos
     const medeirosValue = price - commissionValue
 
     // Divisão da comissão entre Ronald e Adel
@@ -58,7 +61,7 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
     setValorMedeiros(medeirosValue)
     setRonaldCommission(ronaldValue)
     setAdelCommission(adelValue)
-  }, [formData.sale_price, formData.commission_rate, formData.ronald_split_percentage, formData.adel_split_percentage])
+  }, [formData.sale_price, formData.ronald_split_percentage, formData.adel_split_percentage])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -95,13 +98,6 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value || 0)
   }
 
   return (
@@ -253,31 +249,25 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Taxa de Comissão (%) *
-                </label>
-                <select
-                  value={formData.commission_rate}
-                  onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="1.00">1% - Margem Alta</option>
-                  <option value="2.00">2% - Boa Margem</option>
-                  <option value="3.00">3% - Padrão (Recomendado)</option>
-                  <option value="4.00">4% - Incentivo</option>
-                  <option value="5.00">5% - Alto Incentivo</option>
-                  <option value="6.00">6% - Venda Rápida</option>
-                  <option value="7.00">7% - Carro Parado</option>
-                  <option value="8.00">8% - Urgência Alta</option>
-                  <option value="10.00">10% - Liquidação</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Ajuste conforme a situação do carro e urgência da venda
-                </p>
+              <div className="col-span-2">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-green-900">
+                        💰 Comissão Fixa por Venda
+                      </p>
+                      <p className="text-xs text-green-700 mt-1">
+                        Fase de validação do projeto
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold text-green-600">
+                      R$ 300,00
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div>
+              <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Forma de Pagamento
                 </label>
@@ -389,7 +379,7 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Comissão Total ({formData.commission_rate}%):</span>
+                <span className="text-gray-600">Comissão Total (FIXA):</span>
                 <span className="font-semibold text-yellow-600">- {formatCurrency(commission)}</span>
               </div>
 
