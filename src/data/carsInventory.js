@@ -195,10 +195,27 @@ export const carsInventory = [
       'Airbag duplo'
     ],
     description: 'Renault Kwid 2017/2018 Zen. Compacto econômico e moderno.',
-    images: [],
+    images: [
+      '/cars/kwid-1.jpeg',
+      '/cars/kwid-2.jpeg',
+      '/cars/kwid-3.jpeg',
+      '/cars/kwid-4.jpeg',
+      '/cars/kwid-5.jpeg',
+      '/cars/kwid-6.jpeg',
+      '/cars/kwid-7.jpeg',
+      '/cars/kwid-8.jpeg',
+      '/cars/kwid-9.jpeg',
+      '/cars/kwid-10.jpeg',
+      '/cars/kwid-11.jpeg',
+      '/cars/kwid-12.jpeg',
+      '/cars/kwid-13.jpeg',
+      '/cars/kwid-14.jpeg',
+      '/cars/kwid-15.jpeg',
+      '/cars/kwid-16.jpeg'
+    ],
     status: 'available',
     category: 'hatch',
-    featured: false,
+    featured: true,
     tags: ['econômico', 'flex', 'manual']
   },
   {
@@ -223,10 +240,28 @@ export const carsInventory = [
       'Piloto automático'
     ],
     description: 'Toyota Corolla XEI 2016/2017. Sedan premium com conforto e economia.',
-    images: [],
+    images: [
+      '/cars/Corola-1.jpeg',
+      '/cars/Corola-2.jpeg',
+      '/cars/Corola-3.jpeg',
+      '/cars/Corola-5.jpeg',
+      '/cars/Corola-6.jpeg',
+      '/cars/Corola-7.jpeg',
+      '/cars/Corola-8.jpeg',
+      '/cars/Corola-9.jpeg',
+      '/cars/Corola-10.jpeg',
+      '/cars/Corola-11.jpeg',
+      '/cars/Corola-12.jpeg',
+      '/cars/Corola-13.jpeg',
+      '/cars/Corola-14.jpeg',
+      '/cars/Corola-15.jpeg',
+      '/cars/Corola-16.jpeg',
+      '/cars/Corola-17.jpeg',
+      '/cars/Corola-18.jpeg'
+    ],
     status: 'available',
     category: 'sedan',
-    featured: false,
+    featured: true,
     tags: ['sedan', 'flex', 'automático', 'premium']
   },
   {
@@ -251,10 +286,28 @@ export const carsInventory = [
       'Controle de estabilidade'
     ],
     description: 'Fiat Argo 2021/2022 1.0. Hatch moderno e econômico.',
-    images: [],
+    images: [
+      '/cars/Argo-1.jpeg',
+      '/cars/Argo-2.jpeg',
+      '/cars/Argo-3.jpeg',
+      '/cars/Argo-4.jpeg',
+      '/cars/Argo-5.jpeg',
+      '/cars/Argo-6.jpeg',
+      '/cars/Argo-7.jpeg',
+      '/cars/Argo-8.jpeg',
+      '/cars/Argo-9.jpeg',
+      '/cars/Argo-10.jpeg',
+      '/cars/Argo-11.jpeg',
+      '/cars/Argo-12.jpeg',
+      '/cars/Argo-13.jpeg',
+      '/cars/Argo-14.jpeg',
+      '/cars/Argo-15.jpeg',
+      '/cars/Argo-16.jpeg',
+      '/cars/Argo-17.jpeg'
+    ],
     status: 'available',
     category: 'hatch',
-    featured: false,
+    featured: true,
     tags: ['hatch', 'flex', 'manual', 'moderno']
   },
   {
@@ -279,10 +332,19 @@ export const carsInventory = [
       'OnStar'
     ],
     description: 'Chevrolet Tracker LT 2022. SUV automático completo e moderno.',
-    images: [],
+    images: [
+      '/cars/Traker-1.jpeg',
+      '/cars/Traker-2.jpeg',
+      '/cars/Traker-3.jpeg',
+      '/cars/Traker-4.jpeg',
+      '/cars/Traker-5.jpeg',
+      '/cars/Traker-6.jpeg',
+      '/cars/Traker-7.jpeg',
+      '/cars/Traker-8.jpeg'
+    ],
     status: 'available',
     category: 'suv',
-    featured: false,
+    featured: true,
     tags: ['suv', 'automática', 'flex', 'completo']
   },
   {
@@ -306,10 +368,28 @@ export const carsInventory = [
       'Bancos em couro'
     ],
     description: 'L200 Triton 2015 3.2 Flex. Picape robusta e potente.',
-    images: [],
+    images: [
+      '/cars/L200-1.jpeg',
+      '/cars/L200-2.jpeg',
+      '/cars/L200-3.jpeg',
+      '/cars/L200-4.jpeg',
+      '/cars/L200-5.jpeg',
+      '/cars/L200-6.jpeg',
+      '/cars/L200-7.jpeg',
+      '/cars/L200-8.jpeg',
+      '/cars/L200-9.jpeg',
+      '/cars/L200-10.jpeg',
+      '/cars/L200-11.jpeg',
+      '/cars/L200-12.jpeg',
+      '/cars/L200-13.jpeg',
+      '/cars/L200-14.jpeg',
+      '/cars/L200-15.jpeg',
+      '/cars/L200-16.jpeg',
+      '/cars/L200-17.jpeg'
+    ],
     status: 'available',
     category: 'pickup',
-    featured: false,
+    featured: true,
     tags: ['picape', '4x4', 'flex', 'cabine dupla']
   },
   {
@@ -334,10 +414,26 @@ export const carsInventory = [
       'Teto solar'
     ],
     description: 'Pajero Full 2009 4x4. SUV 7 lugares diesel, robusta e confortável.',
-    images: [],
+    images: [
+      '/cars/Pagero-1.jpeg',
+      '/cars/Pagero-2.jpeg',
+      '/cars/Pagero-3.jpeg',
+      '/cars/Pagero-4.jpeg',
+      '/cars/Pagero-5.jpeg',
+      '/cars/Pagero-6.jpeg',
+      '/cars/Pagero-7.jpeg',
+      '/cars/Pagero-8.jpeg',
+      '/cars/Pagero-9.jpeg',
+      '/cars/Pagero-10.jpeg',
+      '/cars/Pagero-11.jpeg',
+      '/cars/Pagero-12.jpeg',
+      '/cars/Pagero-13.jpeg',
+      '/cars/Pagero-14.jpeg',
+      '/cars/Pagero-15.jpeg'
+    ],
     status: 'available',
     category: 'suv',
-    featured: false,
+    featured: true,
     tags: ['suv', '4x4', 'diesel', '7 lugares']
   },
   {
@@ -362,10 +458,22 @@ export const carsInventory = [
       'Controle de estabilidade'
     ],
     description: 'Nissan Kicks 2023/2024. SUV moderno com baixa quilometragem.',
-    images: [],
+    images: [
+      '/cars/kicks-1.jpeg',
+      '/cars/kicks-2.jpeg',
+      '/cars/kicks-3.jpeg',
+      '/cars/kicks-4.jpeg',
+      '/cars/kicks-5.jpeg',
+      '/cars/kicks-6.jpeg',
+      '/cars/kicks-7.jpeg',
+      '/cars/kicks-8.jpeg',
+      '/cars/kicks-9.jpeg',
+      '/cars/kicks-10.jpeg',
+      '/cars/kicks-11.jpeg'
+    ],
     status: 'available',
     category: 'suv',
-    featured: false,
+    featured: true,
     tags: ['suv', 'automática', 'flex', 'baixa km', 'novo']
   },
   {
@@ -416,10 +524,33 @@ export const carsInventory = [
       'Vidros elétricos'
     ],
     description: 'Ford Ranger 2014 3.2 Diesel. Picape potente e resistente.',
-    images: [],
+    images: [
+      '/cars/Ranger-1.jpeg',
+      '/cars/Ranger-2.jpeg',
+      '/cars/Ranger-3.jpeg',
+      '/cars/Ranger-4.jpeg',
+      '/cars/Ranger-5.jpeg',
+      '/cars/Ranger-6.jpeg',
+      '/cars/Ranger-7.jpeg',
+      '/cars/Ranger-8.jpeg',
+      '/cars/Ranger-9.jpeg',
+      '/cars/Ranger-10.jpeg',
+      '/cars/Ranger-11.jpeg',
+      '/cars/Ranger-12.jpeg',
+      '/cars/Ranger-13.jpeg',
+      '/cars/Ranger-14.jpeg',
+      '/cars/Ranger-15.jpeg',
+      '/cars/Ranger-16.jpeg',
+      '/cars/Ranger-17.jpeg',
+      '/cars/Ranger-18.jpeg',
+      '/cars/Ranger-19.jpeg',
+      '/cars/Ranger-20.jpeg',
+      '/cars/Ranger-21.jpeg',
+      '/cars/Ranger-22.jpeg'
+    ],
     status: 'available',
     category: 'pickup',
-    featured: false,
+    featured: true,
     tags: ['picape', 'diesel', '4x4', 'cabine dupla']
   },
   {
@@ -443,10 +574,26 @@ export const carsInventory = [
       'Porta-malas amplo'
     ],
     description: 'VW Spacefox 2007/2008 Confortline 1.6. Sedan familiar econômico.',
-    images: [],
+    images: [
+      '/cars/space-1.jpeg',
+      '/cars/space-2.jpeg',
+      '/cars/space-3.jpeg',
+      '/cars/space-4.jpeg',
+      '/cars/space-5.jpeg',
+      '/cars/space-6.jpeg',
+      '/cars/space-7.jpeg',
+      '/cars/space-8.jpeg',
+      '/cars/space-9.jpeg',
+      '/cars/space-10.jpeg',
+      '/cars/space-11.jpeg',
+      '/cars/space-12.jpeg',
+      '/cars/space-13.jpeg',
+      '/cars/space-14.jpeg',
+      '/cars/space-15.jpeg'
+    ],
     status: 'available',
     category: 'sedan',
-    featured: false,
+    featured: true,
     tags: ['sedan', 'flex', 'manual', 'familiar']
   }
 ];

@@ -365,7 +365,7 @@ async function chatWithClaude(messages, convId) {
   console.log(`📨 Sending ${cleanMessages.length} messages to Claude`);
 
   // Claude precisa do system message separado
-  // Timeout de 8s (antes do limite de 10s do Vercel)
+  // Timeout de 25s (margem antes do limite de 30s do Vercel FREE no plano pago, ou para desenvolvimento local)
   const response = await withTimeout(
     anthropic.messages.create({
       model: CONFIG.anthropic.model,
@@ -375,7 +375,7 @@ async function chatWithClaude(messages, convId) {
       messages: cleanMessages,
       tools: claudeTools
     }),
-    8000
+    25000
   );
 
   // Se Claude quis usar tool(s)
@@ -444,7 +444,7 @@ async function chatWithClaude(messages, convId) {
           messages: messagesWithToolResult,
           tools: claudeTools
         }),
-        8000
+        25000
       );
 
       const textBlock = finalResponse.content.find(block => block.type === 'text');
