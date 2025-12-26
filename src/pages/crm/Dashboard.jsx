@@ -8,9 +8,11 @@ import {
   BanknotesIcon,
   ArrowRightOnRectangleIcon,
   PlusIcon,
-  DocumentChartBarIcon
+  DocumentChartBarIcon,
+  CalendarDaysIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
-import { getSales, getLeads, getDashboardMetrics } from '../../lib/supabase'
+import { getSales, getLeads, getDashboardMetrics, getAppointments, updateAppointmentStatus, deleteAppointment } from '../../lib/supabase'
 import SalesModal from '../../components/crm/SalesModal'
 import LeadsTable from '../../components/crm/LeadsTable'
 
@@ -19,10 +21,11 @@ export default function CRMDashboard() {
   const navigate = useNavigate()
   const [sales, setSales] = useState([])
   const [leads, setLeads] = useState([])
+  const [appointments, setAppointments] = useState([])
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showSalesModal, setShowSalesModal] = useState(false)
-  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, sales, leads
+  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, sales, leads, appointments
 
   useEffect(() => {
     loadData()
@@ -31,19 +34,33 @@ export default function CRMDashboard() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [salesData, leadsData, metricsData] = await Promise.all([
+      const [salesData, leadsData, appointmentsData, metricsData] = await Promise.all([
         getSales(),
         getLeads(),
+        getAppointments(),
         getDashboardMetrics().catch(() => null) // Pode não ter a view ainda
       ])
 
       setSales(salesData || [])
       setLeads(leadsData || [])
+      setAppointments(appointmentsData || [])
       setMetrics(metricsData)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteAppointment = async (appointmentId, customerName) => {
+    if (window.confirm(`Tem certeza que deseja deletar o agendamento de ${customerName}?`)) {
+      try {
+        await deleteAppointment(appointmentId)
+        await loadData()
+      } catch (error) {
+        console.error('Erro ao deletar agendamento:', error)
+        alert('Erro ao deletar agendamento. Tente novamente.')
+      }
     }
   }
 
@@ -163,6 +180,16 @@ export default function CRMDashboard() {
               }`}
             >
               Leads ({leads.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('appointments')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'appointments'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Agendamentos ({appointments.length})
             </button>
           </nav>
         </div>
@@ -453,6 +480,173 @@ export default function CRMDashboard() {
             {/* LEADS TAB */}
             {activeTab === 'leads' && (
               <LeadsTable leads={leads} onUpdate={loadData} />
+            )}
+
+            {/* APPOINTMENTS TAB */}
+            {activeTab === 'appointments' && (
+              <div className="space-y-6">
+                {/* Agendamentos de Hoje - Card Destacado */}
+                {appointments.filter(a => {
+                  const today = new Date().toISOString().split('T')[0]
+                  return a.scheduled_date === today && a.status === 'confirmado'
+                }).length > 0 && (
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                    <div className="flex items-center gap-3 mb-4">
+                      <CalendarDaysIcon className="w-6 h-6" />
+                      <h2 className="text-xl font-bold">Agendamentos de Hoje</h2>
+                    </div>
+                    <div className="grid gap-3">
+                      {appointments
+                        .filter(a => {
+                          const today = new Date().toISOString().split('T')[0]
+                          return a.scheduled_date === today && a.status === 'confirmado'
+                        })
+                        .map(appointment => (
+                          <div key={appointment.id} className="bg-white bg-opacity-20 rounded-lg p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-semibold text-lg">
+                                  {appointment.lead?.nome || appointment.customer_name || 'Cliente'}
+                                </p>
+                                <p className="text-sm text-blue-100">
+                                  📞 {appointment.lead?.whatsapp || appointment.phone}
+                                </p>
+                                <p className="text-sm text-blue-100 mt-1">
+                                  🚗 {appointment.vehicle_interest || 'Interesse geral'}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold">{appointment.scheduled_time}</p>
+                                <p className="text-xs text-blue-100 mt-1">
+                                  {appointment.visit_type === 'test_drive' ? '🏁 Test Drive' :
+                                   appointment.visit_type === 'negotiation' ? '💰 Negociação' : '👋 Visita'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tabela de Todos os Agendamentos */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                  <div className="p-6 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900">Todos os Agendamentos</h2>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Horário</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veículo</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {appointments.map((appointment) => (
+                          <tr key={appointment.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {new Date(appointment.scheduled_date).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {appointment.scheduled_time}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {appointment.lead?.nome || appointment.customer_name || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {appointment.lead?.whatsapp || appointment.phone}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {appointment.vehicle_interest || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {appointment.visit_type === 'test_drive' ? '🏁 Test Drive' :
+                               appointment.visit_type === 'negotiation' ? '💰 Negociação' : '👋 Visita'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              {appointment.status === 'confirmado' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Confirmado
+                                </span>
+                              )}
+                              {appointment.status === 'compareceu' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Compareceu
+                                </span>
+                              )}
+                              {appointment.status === 'faltou' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Faltou
+                                </span>
+                              )}
+                              {appointment.status === 'remarcado' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  Remarcado
+                                </span>
+                              )}
+                              {appointment.status === 'cancelado' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  Cancelado
+                                </span>
+                              )}
+                              {appointment.status === 'pending' && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex items-center gap-2 justify-center">
+                                <select
+                                  value={appointment.status}
+                                  onChange={(e) => {
+                                    updateAppointmentStatus(appointment.id, e.target.value)
+                                      .then(() => loadData())
+                                      .catch(err => console.error('Erro ao atualizar:', err))
+                                  }}
+                                  className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="confirmado">Confirmado</option>
+                                  <option value="compareceu">Compareceu</option>
+                                  <option value="faltou">Faltou</option>
+                                  <option value="remarcado">Remarcado</option>
+                                  <option value="cancelado">Cancelado</option>
+                                </select>
+                                <button
+                                  onClick={() => handleDeleteAppointment(
+                                    appointment.id,
+                                    appointment.lead?.nome || appointment.customer_name || 'este agendamento'
+                                  )}
+                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  title="Deletar agendamento"
+                                >
+                                  <TrashIcon className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {appointments.length === 0 && (
+                      <div className="text-center py-12 text-gray-500">
+                        <CalendarDaysIcon className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                        <p>Nenhum agendamento registrado ainda</p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Os agendamentos feitos pelo chat aparecerão aqui
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </>
         )}

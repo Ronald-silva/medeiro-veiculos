@@ -151,14 +151,28 @@ async function scheduleVisit(params) {
       };
     }
 
+    // Converter data do formato brasileiro (DD/MM/YYYY) para ISO (YYYY-MM-DD)
+    let scheduledDate = null;
+    if (preferredDate) {
+      // Tentar converter formato brasileiro para ISO
+      const dateParts = preferredDate.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (dateParts) {
+        // DD/MM/YYYY -> YYYY-MM-DD
+        scheduledDate = `${dateParts[3]}-${dateParts[2]}-${dateParts[1]}`;
+      } else {
+        // Se não for DD/MM/YYYY, tentar usar como está
+        scheduledDate = preferredDate;
+      }
+    }
+
     const appointmentData = {
       customer_name: customerName,
       phone: phone,
-      preferred_date: preferredDate || null,
-      preferred_time: preferredTime || 'a confirmar',
+      scheduled_date: scheduledDate,
+      scheduled_time: preferredTime || 'a confirmar',
       visit_type: visitType || 'visit',
       vehicle_interest: vehicleInterest || '',
-      status: 'pending',
+      status: 'confirmado',
       created_at: new Date().toISOString()
     };
 
