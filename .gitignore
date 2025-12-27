@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backups and temporary files
+*.backup
+*.bak
+*.tmp
+*.temp
+*~
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
