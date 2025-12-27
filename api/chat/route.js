@@ -333,9 +333,10 @@ function saveMessage(conversationId, role, content) {
 
   history.push({ role, content, timestamp: new Date().toISOString() });
 
-  // Limitar histórico a apenas 2 mensagens para evitar timeout no Vercel FREE
-  // Isso mantém 1 troca (user + assistant) - ultra otimizado para plano gratuito
-  const limitedHistory = history.slice(-2);
+  // ✅ RENDER: Mantém até 10 mensagens (5 trocas completas) para IA ser INTELIGENTE
+  // Render não tem timeout restritivo de 10s como Vercel FREE
+  // Isso permite: memória contextual, não repetir perguntas, usar técnicas SPIN/BANT
+  const limitedHistory = history.slice(-10);
 
   conversationCache.set(conversationId, {
     messages: limitedHistory,
