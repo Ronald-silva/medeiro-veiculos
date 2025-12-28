@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { supabase, isSupabaseConfigured, saveLead as saveLeadToSupabase, saveAppointment as saveAppointmentToSupabase } from '../../src/lib/supabaseClient.js';
 import { AGENT_SYSTEM_PROMPT, TOOL_DEFINITIONS, calculateLeadScore } from '../../src/constants/agentPrompts.js';
+import { saveConversation, getConversation, checkRateLimit, isUpstashConfigured } from '../../src/lib/upstash.js';
 
 // Detecta qual API usar (Anthropic preferido, OpenAI como fallback)
 const USE_ANTHROPIC = process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-');
@@ -13,6 +14,10 @@ console.log('  ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? `${process.e
 console.log('  USE_ANTHROPIC:', USE_ANTHROPIC);
 console.log('  USE_OPENAI:', USE_OPENAI);
 console.log('  Selected:', USE_ANTHROPIC ? 'CLAUDE' : (USE_OPENAI ? 'OPENAI' : 'NONE'));
+console.log('');
+console.log('💾 Cache Configuration:');
+console.log('  Upstash Redis:', isUpstashConfigured() ? 'ENABLED (persistent)' : 'DISABLED (memory fallback)');
+console.log('  Supabase:', isSupabaseConfigured() ? 'ENABLED' : 'DISABLED');
 
 // Inicializa clients
 const anthropic = USE_ANTHROPIC ? new Anthropic({
@@ -37,9 +42,8 @@ const CONFIG = {
   }
 };
 
-// Cache em memória para conversas
-const conversationCache = new Map();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+// Cache removido - agora usa Upstash Redis (persistente) ou memória (fallback)
+// Veja src/lib/upstash.js para implementação
 
 // Estoque de veículos (fallback - posteriormente virá do Supabase)
 const VEHICLES_INVENTORY = [
@@ -313,17 +317,13 @@ async function handleFunctionCall(functionName, functionArgs) {
   }
 }
 
-// Gerenciamento de conversas
-function getConversationHistory(conversationId) {
-  const cached = conversationCache.get(conversationId);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.messages;
-  }
-  return [];
+// Gerenciamento de conversas (agora usando Upstash Redis)
+async function getConversationHistory(conversationId) {
+  return await getConversation(conversationId);
 }
 
-function saveMessage(conversationId, role, content) {
-  const history = getConversationHistory(conversationId);
+async function saveMessage(conversationId, role, content) {
+  const history = await getConversationHistory(conversationId);
 
   // Se content não é string, não salvar no cache (evita problemas com tool_use)
   if (typeof content !== 'string') {
@@ -333,26 +333,15 @@ function saveMessage(conversationId, role, content) {
 
   history.push({ role, content, timestamp: new Date().toISOString() });
 
-  // ✅ RENDER: Mantém até 10 mensagens (5 trocas completas) para IA ser INTELIGENTE
-  // Render não tem timeout restritivo de 10s como Vercel FREE
+  // ✅ RAILWAY + UPSTASH: Mantém até 10 mensagens (5 trocas completas) para IA ser INTELIGENTE
+  // Upstash Redis garante persistência mesmo com reinicializações do servidor
   // Isso permite: memória contextual, não repetir perguntas, usar técnicas SPIN/BANT
   const limitedHistory = history.slice(-10);
 
-  conversationCache.set(conversationId, {
-    messages: limitedHistory,
-    timestamp: Date.now()
-  });
+  // Salva no Upstash Redis (ou memória como fallback) com TTL de 24h
+  await saveConversation(conversationId, limitedHistory, 86400);
 
   return limitedHistory;
-}
-
-function cleanupCache() {
-  const now = Date.now();
-  for (const [key, value] of conversationCache.entries()) {
-    if (now - value.timestamp > CACHE_TTL) {
-      conversationCache.delete(key);
-    }
-  }
 }
 
 // Helper para timeout
@@ -566,7 +555,7 @@ export async function POST(request) {
     }
 
     const convId = conversationId || crypto.randomUUID();
-    const history = getConversationHistory(convId);
+    const history = await getConversationHistory(convId);
 
     // Adiciona contexto se houver
     let userMessage = message;
@@ -619,9 +608,9 @@ export async function POST(request) {
       result = await chatWithOpenAI(messages, convId);
     }
 
-    // Salva no histórico
-    saveMessage(convId, 'user', message);
-    saveMessage(convId, 'assistant', result.message);
+    // Salva no histórico (Upstash Redis com persistência)
+    await saveMessage(convId, 'user', message);
+    await saveMessage(convId, 'assistant', result.message);
 
     return new Response(
       JSON.stringify({
