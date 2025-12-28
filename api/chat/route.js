@@ -532,7 +532,7 @@ async function chatWithOpenAI(messages, convId) {
 // Endpoint principal
 export async function POST(request) {
   try {
-    cleanupCache();
+    // Cache cleanup é automático: Redis expira via TTL, memória via setInterval em upstash.js
 
     const { message, conversationId, context } = await request.json();
 
