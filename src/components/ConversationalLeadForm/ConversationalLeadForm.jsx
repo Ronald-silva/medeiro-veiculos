@@ -148,11 +148,11 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <i className="fas fa-robot text-2xl"></i>
+                  <i className="fas fa-user-circle text-2xl"></i>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">Consultor IA</h3>
-                  <p className="text-sm text-white/80">Medeiro Veículos • Online</p>
+                  <h3 className="text-xl font-bold">Consultora Camila</h3>
+                  <p className="text-sm text-white/80">Medeiros Veículos • Online</p>
                 </div>
               </div>
               <button

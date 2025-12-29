@@ -17,8 +17,8 @@ export default function ChatMessage({ message, isUser }) {
       >
         {!isUser && (
           <div className="flex items-center mb-1">
-            <i className="fas fa-robot text-primary mr-2"></i>
-            <span className="text-xs font-semibold text-gray-600">Consultor IA</span>
+            <i className="fas fa-user-circle text-primary mr-2"></i>
+            <span className="text-xs font-semibold text-gray-600">Consultora Camila</span>
           </div>
         )}
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>

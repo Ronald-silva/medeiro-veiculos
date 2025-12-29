@@ -36,8 +36,8 @@ export default function Header({ onChatOpen }) {
               onClick={onChatOpen}
               className="btn btn-primary shadow-lg hover:shadow-xl transition-all duration-300"
             >
-              <i className="fas fa-robot mr-2"></i>
-              Consultor IA 24/7
+              <i className="fas fa-user-circle mr-2"></i>
+              Consultora Camila
             </button>
           </nav>
 
@@ -77,8 +77,8 @@ export default function Header({ onChatOpen }) {
                 }}
                 className="btn btn-primary w-full"
               >
-                <i className="fas fa-robot mr-2"></i>
-                Consultor IA 24/7
+                <i className="fas fa-user-circle mr-2"></i>
+                Consultora Camila
               </button>
               <a href="tel:+5585988852900" className="text-gray-600 hover:text-primary text-center">
                 <i className="fas fa-phone mr-2"></i>

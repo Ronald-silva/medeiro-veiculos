@@ -299,8 +299,8 @@ export default function VehicleCatalog({ onVehicleInterest }) {
             }}
             className="btn btn-accent"
           >
-            <i className="fas fa-robot mr-2"></i>
-            Consultor IA 24/7
+            <i className="fas fa-user-circle mr-2"></i>
+            Consultora Camila
           </button>
         </motion.div>
       </div>
