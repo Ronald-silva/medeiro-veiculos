@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import ConsultoraAvatar from '../ConsultoraAvatar'
 
 export default function ChatMessage({ message, isUser }) {
   return (
@@ -16,8 +17,8 @@ export default function ChatMessage({ message, isUser }) {
         }`}
       >
         {!isUser && (
-          <div className="flex items-center mb-1">
-            <i className="fas fa-user-circle text-primary mr-2"></i>
+          <div className="flex items-center mb-1 gap-2">
+            <ConsultoraAvatar size="sm" />
             <span className="text-xs font-semibold text-gray-600">Consultora Camila</span>
           </div>
         )}

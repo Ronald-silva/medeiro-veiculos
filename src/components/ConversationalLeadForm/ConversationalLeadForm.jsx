@@ -4,6 +4,7 @@ import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 import TypingIndicator from './TypingIndicator'
 import QuickReplies from './QuickReplies'
+import ConsultoraAvatar from '../ConsultoraAvatar'
 import {
   sendMessage,
   getConversationHistory,
@@ -147,9 +148,7 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
           <div className="bg-gradient-to-r from-primary to-secondary p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <i className="fas fa-user-circle text-2xl"></i>
-                </div>
+                <ConsultoraAvatar size="lg" className="bg-white/20" />
                 <div>
                   <h3 className="text-xl font-bold">Consultora Camila</h3>
                   <p className="text-sm text-white/80">Medeiros Veículos • Online</p>
