@@ -43,7 +43,7 @@ export default function TypingIndicator() {
           }}
         />
       </div>
-      <span className="text-sm text-gray-500">Consultor está digitando...</span>
+      <span className="text-sm text-gray-500">Camila está digitando...</span>
     </div>
   )
 }
