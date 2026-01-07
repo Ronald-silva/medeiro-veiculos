@@ -17,6 +17,7 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
@@ -34,3 +35,7 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# WhatsApp session data
+.wwebjs_auth/
+.wwebjs_cache/

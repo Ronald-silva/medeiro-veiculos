@@ -30,6 +30,14 @@ async function loadChatHandler() {
   console.log('✅ Chat handler loaded');
 }
 
+// Importa dinamicamente o handler do WhatsApp
+let whatsappHandler;
+async function loadWhatsAppHandler() {
+  const module = await import('../api/whatsapp/process.js');
+  whatsappHandler = module.default;
+  console.log('✅ WhatsApp handler loaded');
+}
+
 // Rota de chat
 app.post('/api/chat/route', async (req, res) => {
   try {
@@ -54,6 +62,25 @@ app.post('/api/chat/route', async (req, res) => {
     res.status(response.status).json(data);
   } catch (error) {
     console.error('❌ Error in chat route:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Rota de WhatsApp
+app.post('/api/whatsapp/process', async (req, res) => {
+  try {
+    if (!whatsappHandler) {
+      await loadWhatsAppHandler();
+    }
+
+    // Chama o handler diretamente (já é compatível com Express)
+    await whatsappHandler(req, res);
+  } catch (error) {
+    console.error('❌ Error in WhatsApp route:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,
@@ -89,6 +116,7 @@ app.get('/api/health', (_req, res) => {
 (async () => {
   try {
     await loadChatHandler();
+    await loadWhatsAppHandler();
 
     const server = app.listen(PORT, () => {
       console.log('');
@@ -98,6 +126,7 @@ app.get('/api/health', (_req, res) => {
       console.log(`✅ Server running: http://localhost:${PORT}`);
       console.log(`📊 Health check:   http://localhost:${PORT}/api/health`);
       console.log(`💬 Chat endpoint:  http://localhost:${PORT}/api/chat/route`);
+      console.log(`📱 WhatsApp:       http://localhost:${PORT}/api/whatsapp/process`);
       console.log('========================================');
       console.log('');
     });

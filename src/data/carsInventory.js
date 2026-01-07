@@ -12,7 +12,7 @@ export const carsInventory = [
     version: '2009/2009 Cabine Dupla SRV',
     price: 115000,
     mileage: 'A consultar',
-    color: 'A consultar',
+    color: 'Prata',
     fuel: 'Diesel',
     transmission: 'Manual',
     features: [
@@ -194,7 +194,7 @@ export const carsInventory = [
       'Freios ABS',
       'Airbag duplo'
     ],
-    description: 'Renault Kwid 2017/2018 Zen. Compacto econômico e moderno.',
+    description: 'Renault Kwid 2017/2018 Zen. Compacto econômico e moderno. ⚠️ VENDIDO',
     images: [
       '/cars/kwid-1.jpeg',
       '/cars/kwid-2.jpeg',
@@ -213,10 +213,10 @@ export const carsInventory = [
       '/cars/kwid-15.jpeg',
       '/cars/kwid-16.jpeg'
     ],
-    status: 'available',
+    status: 'sold',
     category: 'hatch',
-    featured: true,
-    tags: ['econômico', 'flex', 'manual']
+    featured: false,
+    tags: ['econômico', 'flex', 'manual', 'vendido']
   },
   {
     id: 'corolla-xei-2017',
@@ -353,21 +353,21 @@ export const carsInventory = [
     year: 2015,
     brand: 'Mitsubishi',
     model: 'L200 Triton',
-    version: '3.2 Flex',
+    version: '3.2 Flex ⭐ ÚNICO FLEX NO ESTOQUE',
     price: 95000,
     mileage: 'A consultar',
     color: 'A consultar',
     fuel: 'Flex',
     transmission: 'Manual',
     features: [
-      'Motor 3.2',
+      'Motor 3.2 FLEX (ÚNICO NO ESTOQUE)',
       'Tração 4x4',
       'Cabine dupla',
       'Ar-condicionado',
       'Direção hidráulica',
       'Bancos em couro'
     ],
-    description: 'L200 Triton 2015 3.2 Flex. Picape robusta e potente.',
+    description: 'L200 Triton 2015 3.2 Flex. ⭐ ÚNICO VEÍCULO FLEX DISPONÍVEL. Picape robusta e potente com motor flex, ideal para quem busca economia.',
     images: [
       '/cars/L200-1.jpeg',
       '/cars/L200-2.jpeg',
@@ -390,7 +390,7 @@ export const carsInventory = [
     status: 'available',
     category: 'pickup',
     featured: true,
-    tags: ['picape', '4x4', 'flex', 'cabine dupla']
+    tags: ['picape', '4x4', 'flex', 'cabine dupla', 'ÚNICO FLEX', 'destaque']
   },
   {
     id: 'pajero-full-2009',
@@ -479,11 +479,11 @@ export const carsInventory = [
   {
     id: 'vitara-2014',
     name: 'Suzuki Grand Vitara',
-    year: 2014,
+    year: 2012,
     brand: 'Suzuki',
     model: 'Grand Vitara',
     version: 'Limited Edition 2.0 4x4',
-    price: 65000,
+    price: 48000,
     mileage: 'A consultar',
     color: 'A consultar',
     fuel: 'Gasolina',

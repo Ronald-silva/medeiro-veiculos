@@ -3,7 +3,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const AuthContext = createContext(null)
 
 // Senha de acesso ao CRM (compartilhada entre você e Adel)
-const CRM_PASSWORD = 'medeiros2025' // ALTERE ESTA SENHA!
+// Configurada via variável de ambiente VITE_CRM_PASSWORD no .env.local
+const CRM_PASSWORD = import.meta.env.VITE_CRM_PASSWORD || 'medeiros2025'
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
