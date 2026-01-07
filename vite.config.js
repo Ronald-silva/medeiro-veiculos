@@ -2,10 +2,23 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import viteImagemin from 'vite-plugin-imagemin'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@lib': path.resolve(__dirname, './src/lib'),
+      '@api': path.resolve(__dirname, './src/api'),
+      '@agent': path.resolve(__dirname, './src/agent'),
+      '@config': path.resolve(__dirname, './src/config'),
+      '@components': path.resolve(__dirname, './src/components'),
+      '@data': path.resolve(__dirname, './src/data'),
+      '@constants': path.resolve(__dirname, './src/constants')
+    }
+  },
   plugins: [
     react(),
     VitePWA({
