@@ -4,12 +4,20 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { validateEnv } from '../src/config/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Carrega variáveis de ambiente
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
+
+// Valida variáveis de ambiente ANTES de iniciar o servidor
+const envValidation = validateEnv();
+if (!envValidation.success) {
+  console.error(envValidation.error);
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
