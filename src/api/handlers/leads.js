@@ -1,6 +1,6 @@
-import { isSupabaseConfigured, saveLead as saveLeadToSupabase } from '@lib/supabaseClient.js';
-import { calculateLeadScore } from '@agent/scoring/calculator.js';
-import logger from '@lib/logger.js';
+import { isSupabaseConfigured, saveLead as saveLeadToSupabase } from '../../lib/supabaseClient.js';
+import { calculateLeadScore } from '../../agent/scoring/calculator.js';
+import logger from '../../lib/logger.js';
 
 /**
  * Valida parâmetros obrigatórios do lead

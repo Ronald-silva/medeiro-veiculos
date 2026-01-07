@@ -1,5 +1,5 @@
-import { supabase, isSupabaseConfigured } from '@lib/supabaseClient.js';
-import logger from '@lib/logger.js';
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
+import logger from '../../lib/logger.js';
 
 // Estoque de veículos (fallback - quando Supabase não está disponível)
 const VEHICLES_INVENTORY = [

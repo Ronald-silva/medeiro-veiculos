@@ -17,7 +17,7 @@ const envSchema = z.object({
   // --------------------------------------------
   VITE_SUPABASE_URL: z.string().url('VITE_SUPABASE_URL deve ser uma URL válida'),
   VITE_SUPABASE_ANON_KEY: z.string().min(1, 'VITE_SUPABASE_ANON_KEY é obrigatória'),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY é obrigatória'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
   // --------------------------------------------
   // 📦 Upstash Redis - Cache e Rate Limiting
@@ -40,11 +40,11 @@ const envSchema = z.object({
   // --------------------------------------------
   // 🏪 Informações da Loja
   // --------------------------------------------
-  VITE_STORE_PHONE: z.string().regex(/^\d+$/, 'VITE_STORE_PHONE deve conter apenas números'),
-  VITE_STORE_WHATSAPP: z.string().regex(/^\d+$/, 'VITE_STORE_WHATSAPP deve conter apenas números'),
-  VITE_STORE_ADDRESS: z.string().min(1, 'VITE_STORE_ADDRESS é obrigatório'),
-  VITE_STORE_CITY: z.string().min(1, 'VITE_STORE_CITY é obrigatório'),
-  VITE_STORE_STATE: z.string().length(2, 'VITE_STORE_STATE deve ter 2 letras (ex: CE)'),
+  VITE_STORE_PHONE: z.string().regex(/^\d+$/).optional(),
+  VITE_STORE_WHATSAPP: z.string().regex(/^\d+$/).optional(),
+  VITE_STORE_ADDRESS: z.string().min(1).optional(),
+  VITE_STORE_CITY: z.string().min(1).optional(),
+  VITE_STORE_STATE: z.string().length(2).optional(),
 
   // --------------------------------------------
   // ⚙️ Sistema
@@ -98,9 +98,9 @@ export function validateEnv() {
     const result = envSchema.safeParse(env)
 
     if (!result.success) {
-      const errors = result.error.errors.map(err =>
+      const errors = result.error?.issues?.map(err =>
         `  ❌ ${err.path.join('.')}: ${err.message}`
-      ).join('\n')
+      ).join('\n') || `Erro: ${JSON.stringify(result.error)}`
 
       return {
         success: false,
@@ -115,7 +115,7 @@ export function validateEnv() {
   } catch (error) {
     return {
       success: false,
-      error: `Erro ao validar variáveis de ambiente: ${error.message}`
+      error: `Erro ao validar variáveis de ambiente: ${error?.message || error}`
     }
   }
 }

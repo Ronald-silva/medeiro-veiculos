@@ -1,7 +1,7 @@
 import { recommendVehicles } from './vehicles.js';
 import { scheduleVisit } from './appointments.js';
 import { saveLead } from './leads.js';
-import logger from '@lib/logger.js';
+import logger from '../../lib/logger.js';
 
 /**
  * Processa chamadas de ferramentas (tools) da IA

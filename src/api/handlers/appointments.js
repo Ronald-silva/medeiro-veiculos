@@ -1,6 +1,6 @@
-import { isSupabaseConfigured, saveAppointment as saveAppointmentToSupabase } from '@lib/supabaseClient.js';
-import { convertBrazilianDateToISO } from '@api/utils/dateTime.js';
-import logger from '@lib/logger.js';
+import { isSupabaseConfigured, saveAppointment as saveAppointmentToSupabase } from '../../lib/supabaseClient.js';
+import { convertBrazilianDateToISO } from '../utils/dateTime.js';
+import logger from '../../lib/logger.js';
 
 /**
  * Valida parâmetros obrigatórios do agendamento
