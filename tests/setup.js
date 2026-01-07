@@ -21,7 +21,7 @@ process.env.VITE_STORE_CITY = 'Fortaleza'
 process.env.VITE_STORE_STATE = 'CE'
 
 // Silencia logs durante testes
-vi.mock('../../src/lib/logger.js', () => ({
+vi.mock('../src/lib/logger.js', () => ({
   default: {
     info: vi.fn(),
     warn: vi.fn(),
