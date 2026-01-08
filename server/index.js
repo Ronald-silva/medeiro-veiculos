@@ -54,9 +54,16 @@ app.post('/api/chat/route', async (req, res) => {
     }
 
     // Cria objeto Request compatível com Vercel/Next.js
+    // Adiciona método .get() para headers (compatível com Web Fetch API)
+    const headers = {
+      get: (key) => req.headers[key.toLowerCase()],
+      has: (key) => key.toLowerCase() in req.headers,
+      ...req.headers
+    };
+
     const request = {
       method: 'POST',
-      headers: req.headers,
+      headers,
       json: async () => req.body
     };
 
