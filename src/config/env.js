@@ -8,9 +8,9 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY é obrigatória'),
 
   // --------------------------------------------
-  // 🤖 OpenAI (Embeddings para RAG)
+  // 🤖 OpenAI (Opcional - apenas se usar GPT)
   // --------------------------------------------
-  OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY é obrigatória'),
+  OPENAI_API_KEY: z.string().min(1).optional(),
 
   // --------------------------------------------
   // 🗄️ Supabase - Database PostgreSQL
@@ -33,9 +33,9 @@ const envSchema = z.object({
   EVOLUTION_INSTANCE_NAME: z.string().min(1, 'EVOLUTION_INSTANCE_NAME é obrigatório'),
 
   // --------------------------------------------
-  // 🔐 CRM Authentication
+  // 🔐 CRM Authentication (Opcional)
   // --------------------------------------------
-  VITE_CRM_PASSWORD: z.string().min(1, 'VITE_CRM_PASSWORD é obrigatória'),
+  VITE_CRM_PASSWORD: z.string().min(1).optional(),
 
   // --------------------------------------------
   // 🏪 Informações da Loja
