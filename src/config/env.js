@@ -49,8 +49,8 @@ const envSchema = z.object({
   // --------------------------------------------
   // ⚙️ Sistema
   // --------------------------------------------
-  NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development'),
-  PORT: z.string().regex(/^\d+$/).optional().default('3001')
+  NODE_ENV: z.string().optional(),
+  PORT: z.string().optional()
 })
 
 /**
