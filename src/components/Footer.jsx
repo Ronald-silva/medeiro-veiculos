@@ -11,9 +11,9 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Contato</h3>
             <ul className="space-y-3">
               <li>
-                <a href="tel:+5585988852900" className="hover:text-accent">
+                <a href="tel:+5585992002115" className="hover:text-accent">
                   <i className="fas fa-phone mr-2"></i>
-                  (85) 98885-2900
+                  (85) 99200-2115
                 </a>
               </li>
               <li>

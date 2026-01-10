@@ -57,7 +57,7 @@ export default function CarShowcase() {
 
   const handleWhatsApp = (carName) => {
     const message = encodeURIComponent(`Olá! Gostaria de saber mais sobre o ${carName}`)
-    window.open(`https://api.whatsapp.com/send?phone=5585988852900&text=${message}`, '_blank')
+    window.open(`https://api.whatsapp.com/send?phone=5585992002115&text=${message}`, '_blank')
   }
 
   return (
