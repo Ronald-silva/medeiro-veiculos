@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
@@ -11,8 +9,13 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Contato</h3>
             <ul className="space-y-3">
               <li>
-                <a href="tel:+5585992002115" className="hover:text-accent">
-                  <i className="fas fa-phone mr-2"></i>
+                <a
+                  href="https://api.whatsapp.com/send?phone=5585992002115"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-accent"
+                >
+                  <i className="fab fa-whatsapp mr-2"></i>
                   (85) 99200-2115
                 </a>
               </li>
