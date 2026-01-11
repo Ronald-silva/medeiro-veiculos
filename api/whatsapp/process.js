@@ -134,14 +134,141 @@ async function processCamilaMessage(userMessage, conversationId) {
 }
 
 /**
- * Endpoint POST para processar mensagens (sem enviar de volta)
+ * Envia mensagem via Evolution API
+ */
+async function sendEvolutionMessage(phoneNumber, message) {
+  try {
+    const evolutionUrl = process.env.EVOLUTION_API_URL
+    const evolutionKey = process.env.EVOLUTION_API_KEY
+    const instanceName = process.env.EVOLUTION_INSTANCE_NAME
+
+    if (!evolutionUrl || !evolutionKey || !instanceName) {
+      logger.error('[Evolution] Missing configuration:', {
+        hasUrl: !!evolutionUrl,
+        hasKey: !!evolutionKey,
+        hasInstance: !!instanceName
+      })
+      throw new Error('Evolution API not configured')
+    }
+
+    // Remove @s.whatsapp.net se estiver presente
+    const cleanPhone = phoneNumber.replace('@s.whatsapp.net', '')
+
+    const url = `${evolutionUrl}/message/sendText/${instanceName}`
+
+    const payload = {
+      number: cleanPhone,
+      text: message
+    }
+
+    logger.info('[Evolution] Sending message:', {
+      url,
+      phonePreview: cleanPhone.substring(0, 8) + '...',
+      messagePreview: message.substring(0, 100)
+    })
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': evolutionKey
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      logger.error('[Evolution] Send failed:', {
+        status: response.status,
+        error: errorText
+      })
+      throw new Error(`Evolution API error: ${response.status} - ${errorText}`)
+    }
+
+    const result = await response.json()
+    logger.info('[Evolution] Message sent successfully:', {
+      messageId: result.key?.id
+    })
+
+    return result
+  } catch (error) {
+    logger.error('[Evolution] Send error:', error)
+    throw error
+  }
+}
+
+/**
+ * Extrai dados do webhook do Evolution API v2.3.7
+ */
+function extractWebhookData(body) {
+  try {
+    // Formato Evolution API v2.3.7:
+    // {
+    //   "event": "messages.upsert",
+    //   "instance": "...",
+    //   "data": {
+    //     "key": { "remoteJid": "5585...", "fromMe": false },
+    //     "pushName": "...",
+    //     "message": { "conversation": "..." }
+    //   }
+    // }
+
+    const { event, instance, data } = body
+
+    // Ignora mensagens enviadas por nós mesmos
+    if (data?.key?.fromMe === true) {
+      logger.debug('[WhatsApp] Ignoring message from self')
+      return null
+    }
+
+    // Ignora eventos que não são mensagens novas
+    if (event !== 'messages.upsert') {
+      logger.debug('[WhatsApp] Ignoring non-upsert event:', event)
+      return null
+    }
+
+    // Extrai número (remoteJid pode ser "5585988852900@s.whatsapp.net")
+    const phoneNumber = data?.key?.remoteJid
+
+    // Extrai mensagem (pode estar em diferentes campos)
+    let message = null
+    if (data?.message?.conversation) {
+      message = data.message.conversation
+    } else if (data?.message?.extendedTextMessage?.text) {
+      message = data.message.extendedTextMessage.text
+    } else if (data?.message?.imageMessage?.caption) {
+      message = data.message.imageMessage.caption
+    } else if (data?.message?.videoMessage?.caption) {
+      message = data.message.videoMessage.caption
+    }
+
+    const pushName = data?.pushName || 'Cliente'
+
+    if (!phoneNumber || !message) {
+      logger.warn('[WhatsApp] Missing required fields:', {
+        hasPhone: !!phoneNumber,
+        hasMessage: !!message,
+        messageType: data?.message ? Object.keys(data.message)[0] : 'none'
+      })
+      return null
+    }
+
+    return { phoneNumber, message, pushName, instance }
+  } catch (error) {
+    logger.error('[WhatsApp] Error extracting webhook data:', error)
+    return null
+  }
+}
+
+/**
+ * Endpoint POST para processar mensagens do Evolution API
  */
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true)
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version')
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, apikey')
 
   if (req.method === 'OPTIONS') {
     res.status(200).end()
@@ -153,13 +280,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { phoneNumber, message } = req.body
+    logger.debug('[WhatsApp] Received webhook:', {
+      bodyPreview: JSON.stringify(req.body).substring(0, 200)
+    })
 
-    if (!phoneNumber || !message) {
-      return res.status(400).json({ error: 'phoneNumber and message are required' })
+    // Extrai dados do webhook
+    const webhookData = extractWebhookData(req.body)
+
+    if (!webhookData) {
+      // Não é um erro - apenas ignora mensagens que não precisam processar
+      return res.status(200).json({ status: 'ignored' })
     }
 
-    logger.info('[WhatsApp] Processing message:', { phoneNumber })
+    const { phoneNumber, message, pushName } = webhookData
+
+    logger.info('[WhatsApp] Processing message from:', {
+      pushName,
+      phonePreview: phoneNumber.substring(0, 10) + '...',
+      messagePreview: message.substring(0, 100)
+    })
 
     // ID da conversa = número do WhatsApp
     const conversationId = `whatsapp_${phoneNumber}`
@@ -167,9 +306,12 @@ export default async function handler(req, res) {
     // Processa com Camila
     const camilaResponse = await processCamilaMessage(message, conversationId)
 
+    // Envia resposta de volta via Evolution API
+    await sendEvolutionMessage(phoneNumber, camilaResponse)
+
     return res.status(200).json({
       status: 'success',
-      response: camilaResponse
+      message: 'Response sent via WhatsApp'
     })
 
   } catch (error) {
