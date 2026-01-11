@@ -10,13 +10,13 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://api.whatsapp.com/send?phone=5585992002115"
+                  href="https://api.whatsapp.com/send?phone=5585920021150"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-accent"
                 >
                   <i className="fab fa-whatsapp mr-2"></i>
-                  (85) 99200-2115
+                  (85) 92002-1150
                 </a>
               </li>
               <li>

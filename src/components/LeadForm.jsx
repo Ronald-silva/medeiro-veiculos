@@ -41,7 +41,7 @@ export default function LeadForm() {
     )
     
     // Abre o WhatsApp com a mensagem
-    window.open(`https://wa.me/5585992002115?text=${message}`, '_blank')
+    window.open(`https://wa.me/5585920021150?text=${message}`, '_blank')
   }
 
   return (

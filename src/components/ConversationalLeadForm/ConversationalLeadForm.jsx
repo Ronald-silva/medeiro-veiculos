@@ -113,7 +113,7 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
 
       const errorMessage = {
         role: 'assistant',
-        content: 'Desculpe, estou com problemas técnicos. Por favor, entre em contato pelo WhatsApp: (85) 99200-2115',
+        content: 'Desculpe, estou com problemas técnicos. Por favor, entre em contato pelo WhatsApp: (85) 92002-1150',
         timestamp: new Date().toISOString()
       }
       setMessages(prev => [...prev, errorMessage])

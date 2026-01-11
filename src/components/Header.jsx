@@ -80,9 +80,9 @@ export default function Header({ onChatOpen }) {
                 <i className="fas fa-user-circle mr-2"></i>
                 Consultora Camila
               </button>
-              <a href="tel:+5585992002115" className="text-gray-600 hover:text-primary text-center">
+              <a href="tel:+5585920021150" className="text-gray-600 hover:text-primary text-center">
                 <i className="fas fa-phone mr-2"></i>
-                (85) 99200-2115
+                (85) 92002-1150
               </a>
             </div>
           </motion.div>
