@@ -280,8 +280,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    logger.debug('[WhatsApp] Received webhook:', {
-      bodyPreview: JSON.stringify(req.body).substring(0, 200)
+    // LOG COMPLETO DO PAYLOAD PARA DEBUG
+    logger.info('[WhatsApp] WEBHOOK PAYLOAD COMPLETO:', {
+      body: JSON.stringify(req.body, null, 2),
+      headers: req.headers,
+      method: req.method
     })
 
     // Extrai dados do webhook
