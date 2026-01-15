@@ -60,12 +60,67 @@ Acesse: http://localhost:3000/crm
 - ✅ Sistema de comissão fixa (R$ 300/venda)
 - ✅ Multi-usuário (Ronald + Adel)
 
-### 🤖 Chat IA Especializado
+### 🤖 Camila - Agente IA de Vendas Especializada
 - ✅ Atendimento 24/7 via WhatsApp
-- ✅ Consultor virtual treinado em veículos
+- ✅ Consultora virtual treinada em veículos seminovos
 - ✅ Agendamento inteligente de visitas
-- ✅ Qualificação automática de leads
+- ✅ Qualificação automática de leads (Lead Scoring)
 - ✅ Transferência para vendedor humano
+
+#### 🎯 Metodologias de Vendas Implementadas
+
+A Camila foi desenvolvida com as principais metodologias de vendas do mercado:
+
+| Metodologia | Aplicação |
+|-------------|-----------|
+| **SPIN Selling** | Perguntas de Situação, Problema, Implicação e Necessidade para entender profundamente o cliente |
+| **BANT** | Qualificação por Budget (orçamento), Authority (decisor), Need (necessidade) e Timeline (urgência) |
+| **Challenger Sale** | Ensina o cliente sobre o mercado, personaliza a abordagem e assume controle consultivo |
+| **Sandler Selling** | Construção de rapport, identificação de dores e processo de decisão do cliente |
+
+#### 🧠 Técnicas Avançadas de Persuasão
+
+- **Gatilhos Emocionais**: Escassez ("último disponível"), urgência ("preço válido até..."), prova social ("cliente X comprou ontem")
+- **Storytelling**: Histórias reais de clientes anteriores para criar conexão emocional
+- **Ancoragem de Preço**: Apresentação estratégica de valores e comparativos de mercado
+- **Espelhamento**: Adaptação do tom e linguagem ao perfil do cliente
+
+#### 🎪 Técnicas de Fechamento
+
+- **Fechamento Alternativo**: "Prefere vir amanhã às 10h ou às 14h?"
+- **Fechamento Presuntivo**: "Vou reservar o veículo para sua visita"
+- **Fechamento por Resumo**: Recapitula benefícios antes de pedir decisão
+- **Fechamento por Escassez**: "Este modelo tem alta procura, recomendo agendar logo"
+
+#### 🛡️ Tratamento de Objeções
+
+| Objeção | Estratégia |
+|---------|------------|
+| **"Está caro"** | Demonstra valor, compara com mercado, oferece simulação de financiamento |
+| **"Preciso pensar"** | Identifica a real objeção, oferece mais informações, cria urgência sutil |
+| **"Vi mais barato"** | Diferencia pela procedência, garantia e atendimento personalizado |
+| **"Meu usado como entrada"** | Explica processo de avaliação presencial |
+
+#### 📊 Lead Scoring Automático
+
+A Camila qualifica automaticamente cada lead com pontuação baseada em:
+- Intenção de compra demonstrada (0-30 pts)
+- Urgência/Timeline (0-25 pts)
+- Capacidade financeira indicada (0-25 pts)
+- Engajamento na conversa (0-20 pts)
+
+**Classificação:**
+- 🔥 **Hot Lead (70-100)**: Prioridade máxima, transferir para vendedor
+- 🌡️ **Warm Lead (40-69)**: Potencial, continuar nutrição
+- ❄️ **Cold Lead (0-39)**: Manter relacionamento, follow-up futuro
+
+#### 💡 Diferenciais da Camila
+
+- **Transparência**: Nunca força venda, sempre orienta o melhor para o cliente
+- **Conhecimento Local**: Sabe horários, endereço e condições de Fortaleza/CE
+- **Personalização**: Adapta recomendações ao perfil e necessidade específica
+- **Humanização**: Tom amigável, uso de emojis moderado, linguagem natural
+- **Foco em Agendamento**: Principal objetivo é trazer o cliente até a loja
 
 ---
 
@@ -125,10 +180,14 @@ medeiros-veiculos/
 
 - **Frontend:** React 18 + Vite
 - **Estilização:** TailwindCSS
-- **Backend:** Supabase (PostgreSQL)
-- **IA:** OpenAI GPT-4
-- **Deploy:** Vercel / Render
-- **Comunicação:** WhatsApp Business API
+- **Backend:** Supabase (PostgreSQL) + Express.js
+- **IA:** Anthropic Claude (claude-sonnet-4-5-20250929)
+- **Cache:** Upstash Redis (histórico de conversas)
+- **WhatsApp:** Evolution API v2.3.7
+- **Deploy:** Railway
+- **Logging:** Winston (estruturado)
+- **Validação:** Zod (environment variables)
+- **Testes:** Vitest (31 testes unitários)
 
 ---
 
@@ -167,7 +226,7 @@ Venda de R$ 50.000
 
 **Medeiros Veículos**
 📍 Av. Américo Barreira, 909 - Loja 03, Demócrito Rocha, Fortaleza/CE
-📱 WhatsApp: (85) 98885-2900
+📱 WhatsApp: (85) 92002-1150
 🕐 Seg-Sex: 8h às 17h | Sáb: 8h às 13h | Dom: Fechado
 
 ---
