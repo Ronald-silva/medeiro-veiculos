@@ -88,7 +88,7 @@ A Camila foi desenvolvida com as principais metodologias de vendas do mercado:
 #### 🎪 Técnicas de Fechamento
 
 - **Fechamento Alternativo**: "Prefere vir amanhã às 10h ou às 14h?"
-- **Fechamento Presuntivo**: "Vou reservar o veículo para sua visita"
+- **Fecaamento Presuntivo**: "Vou reservar o veículo para sua visita"
 - **Fechamento por Resumo**: Recapitula benefícios antes de pedir decisão
 - **Fechamento por Escassez**: "Este modelo tem alta procura, recomendo agendar logo"
 
