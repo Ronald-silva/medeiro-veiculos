@@ -136,25 +136,30 @@ async function processCamilaMessage(userMessage, conversationId) {
 /**
  * Envia mensagem via Evolution API
  */
-async function sendEvolutionMessage(phoneNumber, message) {
+async function sendEvolutionMessage(phoneNumber, message, webhookInstance = null) {
   try {
     const evolutionUrl = process.env.EVOLUTION_API_URL
     const evolutionKey = process.env.EVOLUTION_API_KEY
-    const instanceName = process.env.EVOLUTION_INSTANCE_NAME
+    // Usa instância do webhook se disponível, senão usa variável de ambiente
+    const instanceName = webhookInstance || process.env.EVOLUTION_INSTANCE_NAME
 
     if (!evolutionUrl || !evolutionKey || !instanceName) {
       logger.error('[Evolution] Missing configuration:', {
         hasUrl: !!evolutionUrl,
         hasKey: !!evolutionKey,
-        hasInstance: !!instanceName
+        hasInstance: !!instanceName,
+        webhookInstance
       })
       throw new Error('Evolution API not configured')
     }
 
+    // Encode do nome da instância para URL (trata espaços e acentos)
+    const encodedInstance = encodeURIComponent(instanceName)
+
     // Remove @s.whatsapp.net se estiver presente
     const cleanPhone = phoneNumber.replace('@s.whatsapp.net', '')
 
-    const url = `${evolutionUrl}/message/sendText/${instanceName}`
+    const url = `${evolutionUrl}/message/sendText/${encodedInstance}`
 
     const payload = {
       number: cleanPhone,
@@ -311,7 +316,8 @@ export default async function handler(req, res) {
     const camilaResponse = await processCamilaMessage(message, conversationId)
 
     // Envia resposta de volta via Evolution API
-    await sendEvolutionMessage(phoneNumber, camilaResponse)
+    // Usa o nome da instância do webhook (mais confiável que variável de ambiente)
+    await sendEvolutionMessage(phoneNumber, camilaResponse, webhookData.instance)
 
     return res.status(200).json({
       status: 'success',
