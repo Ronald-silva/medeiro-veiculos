@@ -153,11 +153,18 @@ async function sendEvolutionMessage(phoneNumber, message, webhookInstance = null
       throw new Error('Evolution API not configured')
     }
 
-    // Encode do nome da instância para URL (trata espaços e acentos)
-    const encodedInstance = encodeURIComponent(instanceName)
-
     // Remove @s.whatsapp.net se estiver presente
     const cleanPhone = phoneNumber.replace('@s.whatsapp.net', '')
+
+    // Tenta diferentes formatos de URL para Evolution API
+    // Formato 1: com encoding (para espaços e acentos)
+    const encodedInstance = encodeURIComponent(instanceName)
+
+    logger.info('[Evolution] Instance details:', {
+      original: instanceName,
+      encoded: encodedInstance,
+      evolutionUrl
+    })
 
     const url = `${evolutionUrl}/message/sendText/${encodedInstance}`
 
