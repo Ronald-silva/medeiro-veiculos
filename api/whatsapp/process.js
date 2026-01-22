@@ -227,8 +227,9 @@ function extractWebhookData(body) {
       return null
     }
 
-    // Extrai número (remoteJid pode ser "5585988852900@s.whatsapp.net")
-    const phoneNumber = data?.key?.remoteJid
+    // Extrai número - Evolution API v2.3.7 usa remoteJidAlt para o número real
+    // quando addressingMode é 'lid', o remoteJid é um ID interno
+    const phoneNumber = data?.key?.remoteJidAlt || data?.key?.remoteJid
 
     // Extrai mensagem (pode estar em diferentes campos)
     let message = null
