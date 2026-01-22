@@ -323,8 +323,8 @@ export default async function handler(req, res) {
     const camilaResponse = await processCamilaMessage(message, conversationId)
 
     // Envia resposta de volta via Evolution API
-    // Usa o nome da instância do webhook (mais confiável que variável de ambiente)
-    await sendEvolutionMessage(phoneNumber, camilaResponse, webhookData.instance)
+    // Usa a variável de ambiente (mais confiável após renomear instância)
+    await sendEvolutionMessage(phoneNumber, camilaResponse)
 
     return res.status(200).json({
       status: 'success',
