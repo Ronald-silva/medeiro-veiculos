@@ -25,6 +25,7 @@ const PORT = process.env.PORT || 3001;
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Para Twilio webhooks
 
 // Servir arquivos estáticos do frontend (Vite build)
 const buildPath = path.join(__dirname, '..', 'dist');
@@ -38,12 +39,20 @@ async function loadChatHandler() {
   console.log('✅ Chat handler loaded');
 }
 
-// Importa dinamicamente o handler do WhatsApp
+// Importa dinamicamente o handler do WhatsApp (Evolution API)
 let whatsappHandler;
 async function loadWhatsAppHandler() {
   const module = await import('../api/whatsapp/process.js');
   whatsappHandler = module.default;
-  console.log('✅ WhatsApp handler loaded');
+  console.log('✅ WhatsApp Evolution handler loaded');
+}
+
+// Importa dinamicamente o handler do Twilio
+let twilioHandler;
+async function loadTwilioHandler() {
+  const module = await import('../api/whatsapp/twilio.js');
+  twilioHandler = module.default;
+  console.log('✅ WhatsApp Twilio handler loaded');
 }
 
 // Rota de chat
@@ -85,7 +94,7 @@ app.post('/api/chat/route', async (req, res) => {
   }
 });
 
-// Rota de WhatsApp
+// Rota de WhatsApp (Evolution API - legado)
 app.post('/api/whatsapp/process', async (req, res) => {
   try {
     if (!whatsappHandler) {
@@ -101,6 +110,21 @@ app.post('/api/whatsapp/process', async (req, res) => {
       message: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
+  }
+});
+
+// Rota de WhatsApp (Twilio)
+app.post('/api/whatsapp/twilio', async (req, res) => {
+  try {
+    if (!twilioHandler) {
+      await loadTwilioHandler();
+    }
+
+    // Chama o handler diretamente
+    await twilioHandler(req, res);
+  } catch (error) {
+    console.error('❌ Error in Twilio route:', error);
+    res.status(200).send('OK'); // Twilio espera 200 mesmo com erro
   }
 });
 
@@ -132,6 +156,7 @@ app.get('/api/health', (_req, res) => {
   try {
     await loadChatHandler();
     await loadWhatsAppHandler();
+    await loadTwilioHandler();
 
     const server = app.listen(PORT, () => {
       console.log('');
@@ -141,7 +166,7 @@ app.get('/api/health', (_req, res) => {
       console.log(`✅ Server running: http://localhost:${PORT}`);
       console.log(`📊 Health check:   http://localhost:${PORT}/api/health`);
       console.log(`💬 Chat endpoint:  http://localhost:${PORT}/api/chat/route`);
-      console.log(`📱 WhatsApp:       http://localhost:${PORT}/api/whatsapp/process`);
+      console.log(`📱 Twilio:         http://localhost:${PORT}/api/whatsapp/twilio`);
       console.log('========================================');
       console.log('');
     });
