@@ -63,10 +63,12 @@ export function calculateFinancing(vehiclePrice, downPayment, months, monthlyRat
  * @returns {string} Valor formatado (ex: "R$ 1.234,56")
  */
 export function formatCurrency(value) {
+  // Trata valores undefined, null ou NaN
+  const safeValue = (value === undefined || value === null || isNaN(value)) ? 0 : Number(value);
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
-  }).format(value);
+  }).format(safeValue);
 }
 
 /**

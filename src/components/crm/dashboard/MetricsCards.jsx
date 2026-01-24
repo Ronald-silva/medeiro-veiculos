@@ -6,7 +6,23 @@ import {
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../../../utils/calculations'
 
-export default function MetricsCards({ stats }) {
+export default function MetricsCards({ stats = {} }) {
+  // Garante valores seguros usando nullish coalescing
+  const safeStats = {
+    medeirosRecebe: stats.medeirosRecebe ?? stats.medeiros_recebe ?? 0,
+    totalVendido: stats.totalVendido ?? stats.receita_total ?? 0,
+    totalComissao: stats.totalComissao ?? stats.comissao_total ?? 0,
+    totalVendas: stats.totalVendas ?? stats.total_vendas ?? 0,
+    ronaldComissaoTotal: stats.ronaldComissaoTotal ?? stats.ronald_comissao_total ?? 0,
+    ronaldComissaoPaga: stats.ronaldComissaoPaga ?? stats.ronald_comissao_paga ?? 0,
+    ronaldComissaoPendente: stats.ronaldComissaoPendente ?? stats.ronald_comissao_pendente ?? 0,
+    adelComissaoTotal: stats.adelComissaoTotal ?? stats.adel_comissao_total ?? 0,
+    adelComissaoPaga: stats.adelComissaoPaga ?? stats.adel_comissao_paga ?? 0,
+    adelComissaoPendente: stats.adelComissaoPendente ?? stats.adel_comissao_pendente ?? 0,
+    totalLeads: stats.totalLeads ?? stats.total_leads ?? 0,
+    leadsNovos: stats.leadsNovos ?? stats.leads_novos ?? 0,
+  }
+
   return (
     <>
       {/* Cards de Métricas Financeiras */}
@@ -17,14 +33,14 @@ export default function MetricsCards({ stats }) {
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-blue-100">🏪 Medeiros Recebe</p>
               <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2 truncate">
-                {formatCurrency(stats.medeirosRecebe || stats.medeiros_recebe)}
+                {formatCurrency(safeStats.medeirosRecebe)}
               </p>
               <p className="text-xs text-blue-100 mt-1">
                 Dono da loja (líquido)
               </p>
               <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-blue-400">
                 <p className="text-xs text-blue-100 truncate">
-                  De {formatCurrency(stats.totalVendido || stats.receita_total)} vendidos
+                  De {formatCurrency(safeStats.totalVendido)} vendidos
                 </p>
               </div>
             </div>
@@ -40,10 +56,10 @@ export default function MetricsCards({ stats }) {
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-gray-600">💰 Comissão Total</p>
               <p className="text-2xl font-bold text-gray-900 mt-1 sm:mt-2 truncate">
-                {formatCurrency(stats.totalComissao || stats.comissao_total)}
+                {formatCurrency(safeStats.totalComissao)}
               </p>
               <p className="text-xs text-gray-500 mt-1 truncate">
-                Ronald + Adel ({stats.totalVendas || stats.total_vendas || 0} vendas)
+                Ronald + Adel ({safeStats.totalVendas} vendas)
               </p>
             </div>
             <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg flex-shrink-0">
@@ -58,17 +74,17 @@ export default function MetricsCards({ stats }) {
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-green-100">💵 Ronald Recebe</p>
               <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2 truncate">
-                {formatCurrency(stats.ronaldComissaoTotal || stats.ronald_comissao_total)}
+                {formatCurrency(safeStats.ronaldComissaoTotal)}
               </p>
               <p className="text-xs text-green-100 mt-1">
                 Sua parte da comissão
               </p>
               <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-green-400 space-y-1">
                 <p className="text-xs text-green-100 truncate">
-                  ✓ Pago: {formatCurrency(stats.ronaldComissaoPaga || stats.ronald_comissao_paga)}
+                  ✓ Pago: {formatCurrency(safeStats.ronaldComissaoPaga)}
                 </p>
                 <p className="text-xs text-green-100 truncate">
-                  ⏳ Pendente: {formatCurrency(stats.ronaldComissaoPendente || stats.ronald_comissao_pendente)}
+                  ⏳ Pendente: {formatCurrency(safeStats.ronaldComissaoPendente)}
                 </p>
               </div>
             </div>
@@ -84,17 +100,17 @@ export default function MetricsCards({ stats }) {
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-purple-100">🤝 Adel Recebe</p>
               <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2 truncate">
-                {formatCurrency(stats.adelComissaoTotal || stats.adel_comissao_total)}
+                {formatCurrency(safeStats.adelComissaoTotal)}
               </p>
               <p className="text-xs text-purple-100 mt-1">
                 Parte do Adel da comissão
               </p>
               <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-purple-400 space-y-1">
                 <p className="text-xs text-purple-100 truncate">
-                  ✓ Pago: {formatCurrency(stats.adelComissaoPaga || stats.adel_comissao_paga)}
+                  ✓ Pago: {formatCurrency(safeStats.adelComissaoPaga)}
                 </p>
                 <p className="text-xs text-purple-100 truncate">
-                  ⏳ Pendente: {formatCurrency(stats.adelComissaoPendente || stats.adel_comissao_pendente)}
+                  ⏳ Pendente: {formatCurrency(safeStats.adelComissaoPendente)}
                 </p>
               </div>
             </div>
@@ -111,10 +127,10 @@ export default function MetricsCards({ stats }) {
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-medium text-indigo-100">📊 Total de Leads Capturados</p>
             <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">
-              {stats.totalLeads || stats.total_leads || 0}
+              {safeStats.totalLeads}
             </p>
             <p className="text-xs sm:text-sm text-indigo-100 mt-1">
-              🔥 {stats.leadsNovos || stats.leads_novos || 0} novos aguardando contato
+              🔥 {safeStats.leadsNovos} novos aguardando contato
             </p>
           </div>
           <div className="p-3 sm:p-4 bg-indigo-400 bg-opacity-30 rounded-lg flex-shrink-0">
