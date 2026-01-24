@@ -27,7 +27,7 @@ const twilioClient = twilio(
 
 const CONFIG = {
   model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 256,
+  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
   temperature: 0.7
 }
 
