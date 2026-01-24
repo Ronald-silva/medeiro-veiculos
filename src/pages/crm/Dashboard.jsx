@@ -193,7 +193,7 @@ export default function CRMDashboard() {
             {/* DASHBOARD TAB */}
             {activeTab === 'dashboard' && (
               <>
-                <MetricsCards stats={stats} />
+                <MetricsCards stats={stats} sales={sales} leads={leads} />
                 {/* Ação Rápida */}
                 <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-6 sm:mb-8">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getSales, getLeads } from '../../lib/supabase'
-import {
-  ArrowUpIcon,
-  ArrowDownIcon,
-  PrinterIcon,
-  CalendarIcon
-} from '@heroicons/react/24/outline'
+import { PrinterIcon } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../../utils/calculations'
 
 export default function ExecutiveReport() {
@@ -104,15 +99,15 @@ export default function ExecutiveReport() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 print:shadow-none">
-          <div className="flex justify-between items-center mb-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6 print:shadow-none">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Relatório Executivo</h1>
-              <p className="text-gray-600 mt-1">Medeiros Veículos - {getPeriodLabel()}</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Relatório Executivo</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">Medeiros Veículos - {getPeriodLabel()}</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Gerado em: {new Date().toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: 'long',
@@ -120,11 +115,11 @@ export default function ExecutiveReport() {
                 })}
               </p>
             </div>
-            <div className="flex gap-3 print:hidden">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 print:hidden">
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="week">Últimos 7 dias</option>
                 <option value="month">Último mês</option>
@@ -132,7 +127,7 @@ export default function ExecutiveReport() {
               </select>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm"
               >
                 <PrinterIcon className="w-5 h-5" />
                 Imprimir
@@ -148,129 +143,129 @@ export default function ExecutiveReport() {
         ) : (
           <>
             {/* Métricas Principais - Grid 2x2 */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
               {/* Faturamento */}
-              <div className="bg-white rounded-lg shadow-sm p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-gray-600 uppercase">Faturamento Total</h3>
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-600 uppercase">Faturamento Total</h3>
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <span className="text-2xl">💰</span>
+                    <span className="text-xl sm:text-2xl">💰</span>
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-gray-900 mb-2">
+                <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                   {formatCurrency(metrics.totalVendido)}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Em {metrics.totalVendas} {metrics.totalVendas === 1 ? 'venda' : 'vendas'}
                 </p>
               </div>
 
               {/* Ticket Médio */}
-              <div className="bg-white rounded-lg shadow-sm p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-gray-600 uppercase">Ticket Médio</h3>
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-600 uppercase">Ticket Médio</h3>
                   <div className="p-2 bg-blue-100 rounded-lg">
-                    <span className="text-2xl">📊</span>
+                    <span className="text-xl sm:text-2xl">📊</span>
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-gray-900 mb-2">
+                <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                   {formatCurrency(metrics.mediaVenda)}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Por venda realizada
                 </p>
               </div>
 
               {/* Taxa de Conversão */}
-              <div className="bg-white rounded-lg shadow-sm p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-gray-600 uppercase">Taxa de Conversão</h3>
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-600 uppercase">Taxa de Conversão</h3>
                   <div className="p-2 bg-purple-100 rounded-lg">
-                    <span className="text-2xl">🎯</span>
+                    <span className="text-xl sm:text-2xl">🎯</span>
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-gray-900 mb-2">
+                <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                   {metrics.taxaConversao.toFixed(1)}%
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   {metrics.leadsFechados} de {metrics.totalLeads} leads convertidos
                 </p>
               </div>
 
               {/* Tempo Médio de Venda */}
-              <div className="bg-white rounded-lg shadow-sm p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-gray-600 uppercase">Tempo Médio de Venda</h3>
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-600 uppercase">Tempo Médio de Venda</h3>
                   <div className="p-2 bg-orange-100 rounded-lg">
-                    <span className="text-2xl">⏱️</span>
+                    <span className="text-xl sm:text-2xl">⏱️</span>
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-gray-900 mb-2">
+                <p className="text-2xl sm:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                   {Math.round(metrics.tempoMedioVenda)} dias
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Do lead até fechar venda
                 </p>
               </div>
             </div>
 
             {/* Performance de Leads */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance de Atendimento</h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-3xl font-bold text-green-600">{metrics.leadsFechados}</p>
-                  <p className="text-sm text-gray-600 mt-1">Vendas Fechadas</p>
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Performance de Atendimento</h3>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <div className="text-center p-2 sm:p-4 bg-green-50 rounded-lg">
+                  <p className="text-xl sm:text-3xl font-bold text-green-600">{metrics.leadsFechados}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">Vendas Fechadas</p>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-3xl font-bold text-blue-600">{metrics.leadsAtivos}</p>
-                  <p className="text-sm text-gray-600 mt-1">Em Atendimento</p>
+                <div className="text-center p-2 sm:p-4 bg-blue-50 rounded-lg">
+                  <p className="text-xl sm:text-3xl font-bold text-blue-600">{metrics.leadsAtivos}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">Em Atendimento</p>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-3xl font-bold text-red-600">{metrics.leadsPerdidos}</p>
-                  <p className="text-sm text-gray-600 mt-1">Perdidos</p>
+                <div className="text-center p-2 sm:p-4 bg-red-50 rounded-lg">
+                  <p className="text-xl sm:text-3xl font-bold text-red-600">{metrics.leadsPerdidos}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">Perdidos</p>
                 </div>
               </div>
             </div>
 
             {/* Últimas Vendas */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Últimas Vendas</h3>
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Últimas Vendas</h3>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-left">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Veículo</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pagamento</th>
+                      <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                      <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Veículo</th>
+                      <th className="px-3 sm:px-4 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
+                      <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Pagamento</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {sales.slice(0, 10).map((sale) => (
                       <tr key={sale.id}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {new Date(sale.sale_date).toLocaleDateString('pt-BR')}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{sale.vehicle_name}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-right text-gray-900">
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[100px] sm:max-w-[200px]">{sale.vehicle_name}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-medium text-right text-gray-900">
                           {formatCurrency(sale.sale_price)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">{sale.payment_method}</td>
+                        <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600 hidden sm:table-cell">{sale.payment_method}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {sales.length === 0 && (
-                  <p className="text-center py-8 text-gray-500">Nenhuma venda no período</p>
+                  <p className="text-center py-6 sm:py-8 text-gray-500 text-sm">Nenhuma venda no período</p>
                 )}
               </div>
             </div>
 
             {/* Conclusão para o Dono */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-8 text-white mt-6 print:bg-blue-600">
-              <h3 className="text-2xl font-bold mb-4">📈 Resumo Executivo</h3>
-              <div className="space-y-3 text-lg">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-4 sm:p-8 text-white mt-4 sm:mt-6 print:bg-blue-600">
+              <h3 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4">📈 Resumo Executivo</h3>
+              <div className="space-y-2 sm:space-y-3 text-sm sm:text-lg">
                 <p>
                   ✅ <strong>{metrics.totalVendas} carros vendidos</strong> gerando {formatCurrency(metrics.totalVendido)}
                 </p>
