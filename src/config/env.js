@@ -26,11 +26,18 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN é obrigatório'),
 
   // --------------------------------------------
-  // 💬 Evolution API v2 - WhatsApp Business
+  // 💬 Evolution API v2 - WhatsApp Business (Legado - Opcional)
   // --------------------------------------------
-  EVOLUTION_API_URL: z.string().url('EVOLUTION_API_URL deve ser uma URL válida'),
-  EVOLUTION_API_KEY: z.string().min(1, 'EVOLUTION_API_KEY é obrigatória'),
-  EVOLUTION_INSTANCE_NAME: z.string().min(1, 'EVOLUTION_INSTANCE_NAME é obrigatório'),
+  EVOLUTION_API_URL: z.string().url().optional(),
+  EVOLUTION_API_KEY: z.string().min(1).optional(),
+  EVOLUTION_INSTANCE_NAME: z.string().min(1).optional(),
+
+  // --------------------------------------------
+  // 💬 Twilio - WhatsApp Business
+  // --------------------------------------------
+  TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
+  TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+  TWILIO_WHATSAPP_NUMBER: z.string().min(1).optional(),
 
   // --------------------------------------------
   // 🔐 CRM Authentication (Opcional)
@@ -75,10 +82,15 @@ export function validateEnv() {
       UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
       UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 
-      // Evolution API
+      // Evolution API (Legado)
       EVOLUTION_API_URL: process.env.EVOLUTION_API_URL,
       EVOLUTION_API_KEY: process.env.EVOLUTION_API_KEY,
       EVOLUTION_INSTANCE_NAME: process.env.EVOLUTION_INSTANCE_NAME,
+
+      // Twilio
+      TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+      TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+      TWILIO_WHATSAPP_NUMBER: process.env.TWILIO_WHATSAPP_NUMBER,
 
       // CRM
       VITE_CRM_PASSWORD: process.env.VITE_CRM_PASSWORD,
