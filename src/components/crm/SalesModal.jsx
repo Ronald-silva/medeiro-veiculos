@@ -220,7 +220,7 @@ export default function SalesModal({ leads, onClose, onSuccess }) {
                   <option value="">Selecione (opcional)</option>
                   {leads.map((lead) => (
                     <option key={lead.id} value={lead.id}>
-                      {lead.nome} - {lead.whatsapp}
+                      {lead.name} - {lead.whatsapp}
                     </option>
                   ))}
                 </select>

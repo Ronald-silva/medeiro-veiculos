@@ -1,11 +1,16 @@
-import { isSupabaseConfigured, saveLead as saveLeadToSupabase } from '../../lib/supabaseClient.js';
+// ============================================
+// CAMILA 2.0 - HANDLER DE LEADS
+// ============================================
+// Integrado com novo schema e sistema de funil
+// ============================================
+
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
 import { calculateLeadScore } from '../../agent/scoring/calculator.js';
+import { trackFunnelEvent } from '../../lib/analytics.js';
 import logger from '../../lib/logger.js';
 
 /**
  * Valida parâmetros obrigatórios do lead
- * @param {object} leadData - Dados do lead
- * @returns {object} Resultado da validação { valid: boolean, error?: string, message?: string }
  */
 function validateLeadParams(leadData) {
   const { nome, whatsapp, orcamento } = leadData;
@@ -28,34 +33,77 @@ function validateLeadParams(leadData) {
 }
 
 /**
- * Prepara dados do lead para salvamento
- * @param {object} leadData - Dados brutos do lead
- * @param {number} score - Score calculado
- * @returns {object} Dados formatados para salvar
+ * Parse orçamento para número
+ */
+function parseOrcamento(orcamento) {
+  if (typeof orcamento === 'number') return orcamento;
+
+  const text = String(orcamento).toLowerCase();
+  const match = text.match(/(\d+)/);
+  if (match) {
+    let value = parseInt(match[1]);
+    if (text.includes('mil') || text.includes('k') || value < 1000) {
+      value *= 1000;
+    }
+    return value;
+  }
+  return 50000; // default
+}
+
+/**
+ * Determina temperatura do lead baseado no score
+ */
+function getTemperature(score) {
+  if (score >= 90) return 'muito_quente';
+  if (score >= 70) return 'quente';
+  if (score >= 40) return 'morno';
+  return 'frio';
+}
+
+/**
+ * Prepara dados do lead para o NOVO schema
  */
 function prepareLeadData(leadData, score) {
+  const budget = parseOrcamento(leadData.orcamento);
+
   return {
-    conversation_id: leadData.conversationId || crypto.randomUUID(),
-    nome: leadData.nome,
-    whatsapp: leadData.whatsapp,
+    name: leadData.nome,
+    whatsapp: leadData.whatsapp.replace(/\D/g, ''), // Apenas números
     email: leadData.email || null,
-    orcamento: leadData.orcamento,
-    tipo_carro: leadData.tipoCarro || '',
-    forma_pagamento: leadData.formaPagamento || '',
-    urgencia: leadData.urgencia || 'media',
-    tem_troca: leadData.temTroca || false,
-    veiculos_interesse: leadData.veiculosInteresse || [],
-    observacoes: leadData.observacoes || '',
+
+    // BANT
+    budget_max: budget,
+    budget_text: leadData.orcamento,
+    has_trade_in: leadData.temTroca || false,
+    trade_in_vehicle: leadData.veiculoTroca || null,
+    is_decision_maker: true, // Assume que é decisor até confirmar
+
+    // Necessidade
+    vehicle_type_interest: leadData.tipoCarro || null,
+    usage_type: leadData.uso || null,
+
+    // Timeline
+    urgency_level: leadData.urgencia || 'pesquisando',
+
+    // Score e status
     score: score,
-    status: 'novo',
-    created_at: new Date().toISOString()
+    temperature: getTemperature(score),
+    status: score >= 70 ? 'qualificado' : 'em_conversa',
+
+    // Origem
+    source: 'whatsapp',
+
+    // Datas
+    first_contact_at: new Date().toISOString(),
+    last_contact_at: new Date().toISOString(),
+
+    // Notas
+    ai_notes: leadData.observacoes || null
   };
 }
 
 /**
- * Salva lead no Supabase
- * @param {object} leadData - Dados do lead
- * @returns {Promise<object>} Resultado do salvamento
+ * Salva lead no Supabase (NOVO SCHEMA)
  */
 async function saveToSupabase(leadData) {
   try {
@@ -64,19 +112,44 @@ async function saveToSupabase(leadData) {
       return { success: false, reason: 'not_configured' };
     }
 
-    const result = await saveLeadToSupabase(leadData);
+    // Verifica se já existe lead com esse WhatsApp
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('id, score, status')
+      .eq('whatsapp', leadData.whatsapp)
+      .single();
 
-    if (result.success) {
-      logger.info(`Lead saved to Supabase: ${leadData.nome} (ID: ${result.data.id})`);
-      return {
-        success: true,
-        leadId: result.data.id,
-        data: result.data
-      };
+    if (existingLead) {
+      // Atualiza lead existente
+      const { data, error } = await supabase
+        .from('leads')
+        .update({
+          ...leadData,
+          score: Math.max(existingLead.score, leadData.score), // Mantém maior score
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingLead.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      logger.info(`Lead updated: ${leadData.name} (ID: ${data.id})`);
+      return { success: true, leadId: data.id, data, isUpdate: true };
     }
 
-    logger.warn('Failed to save lead to Supabase:', result.error);
-    return { success: false, reason: 'save_failed', error: result.error };
+    // Cria novo lead
+    const { data, error } = await supabase
+      .from('leads')
+      .insert([leadData])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info(`Lead created: ${leadData.name} (ID: ${data.id})`);
+    return { success: true, leadId: data.id, data, isUpdate: false };
+
   } catch (error) {
     logger.error('Error saving lead to Supabase:', error);
     return { success: false, reason: 'exception', error: error.message };
@@ -84,19 +157,47 @@ async function saveToSupabase(leadData) {
 }
 
 /**
+ * Registra atividade de qualificação do lead
+ */
+async function logQualificationActivity(leadId, score, leadData) {
+  if (!isSupabaseConfigured() || !leadId) return;
+
+  try {
+    await supabase
+      .from('lead_activities')
+      .insert([{
+        lead_id: leadId,
+        activity_type: 'lead_qualified',
+        description: `Lead qualificado com score ${score}. Orçamento: R$ ${parseOrcamento(leadData.orcamento).toLocaleString('pt-BR')}`,
+        metadata: {
+          score,
+          budget: parseOrcamento(leadData.orcamento),
+          vehicle_type: leadData.tipoCarro,
+          urgency: leadData.urgencia
+        },
+        performed_by: 'camila',
+        score_change: score
+      }]);
+  } catch (error) {
+    logger.error('Error logging qualification activity:', error);
+  }
+}
+
+/**
  * Salva lead qualificado no sistema
+ * INTEGRADO com novo schema e sistema de funil
+ *
  * @param {object} leadData - Dados do lead
  * @param {string} leadData.nome - Nome completo
  * @param {string} leadData.whatsapp - WhatsApp
  * @param {string} leadData.email - Email (opcional)
  * @param {string} leadData.orcamento - Orçamento
  * @param {string} leadData.tipoCarro - Tipo de carro desejado
- * @param {string} leadData.formaPagamento - Forma de pagamento (à vista, financiamento, etc)
- * @param {string} leadData.urgencia - Urgência da compra (alta, media, baixa)
+ * @param {string} leadData.formaPagamento - Forma de pagamento
+ * @param {string} leadData.urgencia - Urgência (imediato, 1_semana, 1_mes, pesquisando)
  * @param {boolean} leadData.temTroca - Tem carro para troca
- * @param {Array<string>} leadData.veiculosInteresse - Veículos de interesse
+ * @param {string} leadData.veiculoTroca - Descrição do veículo de troca
  * @param {string} leadData.observacoes - Observações adicionais
- * @param {string} leadData.conversationId - ID da conversa
  * @returns {Promise<object>} Resultado do salvamento
  */
 export async function saveLead(leadData) {
@@ -119,22 +220,47 @@ export async function saveLead(leadData) {
 
     // Calcula score de qualificação
     const score = calculateLeadScore(leadData);
-    logger.debug(`Lead score calculated: ${score}`);
+    const temperature = getTemperature(score);
+    logger.debug(`Lead score: ${score} (${temperature})`);
 
-    // Prepara dados do lead
+    // Prepara dados do lead para NOVO schema
     const lead = prepareLeadData(leadData, score);
 
-    logger.info(`Saving lead: ${leadData.nome} (Score: ${score})`);
+    logger.info(`Saving lead: ${leadData.nome} (Score: ${score}, Temp: ${temperature})`);
 
-    // Tenta salvar no Supabase
+    // Salva no Supabase
     const dbResult = await saveToSupabase(lead);
 
     if (dbResult.success) {
+      const leadId = dbResult.leadId;
+
+      // Registra atividade de qualificação
+      await logQualificationActivity(leadId, score, leadData);
+
+      // Registra evento no funil
+      const eventType = dbResult.isUpdate ? 'lead_updated' : 'lead_qualified';
+      await trackFunnelEvent(leadId, eventType, {
+        score,
+        temperature,
+        budget: parseOrcamento(leadData.orcamento)
+      });
+
+      // Mensagem baseada no score
+      let message;
+      if (score >= 70) {
+        message = `Perfeito! Voce tem um otimo perfil. Vamos agendar sua visita?`;
+      } else if (score >= 40) {
+        message = `Anotado! Tenho algumas opcoes que podem te interessar.`;
+      } else {
+        message = `Entendi! Vou te mostrar o que temos disponivel.`;
+      }
+
       return {
         success: true,
-        leadId: dbResult.leadId,
+        leadId,
         score,
-        message: 'Lead salvo com sucesso!'
+        temperature,
+        message
       };
     }
 
@@ -144,15 +270,16 @@ export async function saveLead(leadData) {
     return {
       success: true,
       score,
+      temperature,
       message: 'Dados anotados!'
     };
   } catch (error) {
     logger.error('Error in saveLead:', error);
 
-    // Mesmo com erro, confirma pro usuário para não prejudicar a experiência
     return {
       success: true,
       score: 50,
+      temperature: 'morno',
       message: 'Dados anotados!'
     };
   }

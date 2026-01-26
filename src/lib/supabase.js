@@ -32,7 +32,7 @@ export async function updateLeadStatus(leadId, status, notes = '') {
     .from('leads')
     .update({
       status,
-      last_contact: new Date().toISOString(),
+      last_contact_at: new Date().toISOString(),
       notes: notes || undefined
     })
     .eq('id', leadId)
@@ -48,7 +48,7 @@ export async function getSales(filters = {}) {
     .from('sales')
     .select(`
       *,
-      lead:leads(nome, whatsapp, email)
+      lead:leads(name, whatsapp, email)
     `)
     .order('sale_date', { ascending: false })
 
@@ -136,7 +136,7 @@ export async function getAppointments(filters = {}) {
     .from('appointments')
     .select(`
       *,
-      lead:leads(nome, whatsapp, orcamento)
+      lead:leads(name, whatsapp, budget_text)
     `)
     .order('scheduled_date', { ascending: false })
     .order('scheduled_time', { ascending: true })

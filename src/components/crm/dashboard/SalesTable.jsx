@@ -35,7 +35,7 @@ export default function SalesTable({ sales, showAll = false }) {
                     {sale.vehicle_name}
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">
-                    {sale.lead?.nome || 'N/A'}
+                    {sale.lead?.name || 'N/A'}
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-right text-gray-900">
                     {formatCurrency(sale.sale_price)}

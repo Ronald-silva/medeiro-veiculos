@@ -2,36 +2,137 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
 import logger from '../../lib/logger.js';
 
 // Estoque de veículos (fallback - quando Supabase não está disponível)
+// SINCRONIZADO com inventory.js - MANTER ATUALIZADO!
 const VEHICLES_INVENTORY = [
   {
     id: 1,
-    name: 'Honda HR-V EXL 2022',
-    price: 145900,
-    type: 'SUV',
-    year: 2022,
-    km: 35000,
-    features: ['Automático', 'Flex', 'Completo'],
-    description: 'SUV premium com excelente custo-benefício'
+    name: 'VW Spacefox 2015',
+    price: 31000,
+    type: 'Hatch',
+    year: 2015,
+    km: 95000,
+    features: ['Manual', 'Flex', 'Completo'],
+    description: 'Perua compacta espaçosa'
   },
   {
     id: 2,
-    name: 'Toyota Corolla XEI 2023',
-    price: 139900,
-    type: 'Sedan',
-    year: 2023,
-    km: 28000,
-    features: ['Automático', 'Flex', 'Couro'],
-    description: 'Sedan confortável e econômico'
+    name: 'Kawasaki Ninja 300 2020',
+    price: 32000,
+    type: 'Moto',
+    year: 2020,
+    km: 15000,
+    features: ['Manual', 'Gasolina', 'Esportiva'],
+    description: 'Moto esportiva entrada'
   },
   {
     id: 3,
-    name: 'Jeep Compass Limited 2022',
-    price: 169900,
+    name: 'Fiat Mobi Like 2022',
+    price: 39000,
+    type: 'Hatch',
+    year: 2022,
+    km: 28000,
+    features: ['Manual', 'Flex', 'Direção elétrica'],
+    description: 'Compacto econômico, ideal cidade'
+  },
+  {
+    id: 4,
+    name: 'Suzuki Vitara 2018',
+    price: 48000,
+    type: 'SUV',
+    year: 2018,
+    km: 65000,
+    features: ['Automático', 'Gasolina', '4x2'],
+    description: 'SUV compacto, ótimo para família'
+  },
+  {
+    id: 5,
+    name: 'Fiat Argo Drive 2021',
+    price: 63000,
+    type: 'Hatch',
+    year: 2021,
+    km: 35000,
+    features: ['Manual', 'Flex', 'Completo'],
+    description: 'Hatch moderno e espaçoso'
+  },
+  {
+    id: 6,
+    name: 'Toyota Corolla GLI 2019',
+    price: 91000,
+    type: 'Sedan',
+    year: 2019,
+    km: 55000,
+    features: ['Automático', 'Flex', 'Couro'],
+    description: 'Sedan premium, conforto total'
+  },
+  {
+    id: 7,
+    name: 'Mitsubishi L200 Triton 2020',
+    price: 95000,
+    type: 'Picape',
+    year: 2020,
+    km: 72000,
+    features: ['Manual', 'Flex', '4x4'],
+    description: 'ÚNICO FLEX no estoque - Picape robusta'
+  },
+  {
+    id: 8,
+    name: 'Mitsubishi Pajero Sport 2019',
+    price: 95000,
+    type: 'SUV',
+    year: 2019,
+    km: 68000,
+    features: ['Automático', 'Diesel', '4x4'],
+    description: 'SUV 7 lugares, ideal família grande'
+  },
+  {
+    id: 9,
+    name: 'Chevrolet Tracker LTZ 2022',
+    price: 99000,
     type: 'SUV',
     year: 2022,
-    km: 42000,
+    km: 32000,
+    features: ['Automático', 'Turbo Flex', 'Completo'],
+    description: 'SUV moderno turbo'
+  },
+  {
+    id: 10,
+    name: 'Honda HR-V EX 2021',
+    price: 105000,
+    type: 'SUV',
+    year: 2021,
+    km: 45000,
+    features: ['Automático', 'Flex', '6 airbags'],
+    description: 'SUV espaçosa premium'
+  },
+  {
+    id: 11,
+    name: 'Nissan Kicks SL 2022',
+    price: 115000,
+    type: 'SUV',
+    year: 2022,
+    km: 28000,
+    features: ['Automático', 'Flex', 'Teto solar'],
+    description: 'SUV top de linha'
+  },
+  {
+    id: 12,
+    name: 'Toyota Hilux SR 2021',
+    price: 115000,
+    type: 'Picape',
+    year: 2021,
+    km: 52000,
     features: ['Automático', 'Diesel', '4x4'],
-    description: 'SUV robusto para aventuras'
+    description: 'Picape referência - cor PRATA'
+  },
+  {
+    id: 13,
+    name: 'Ford Ranger XLT 2020',
+    price: 115000,
+    type: 'Picape',
+    year: 2020,
+    km: 58000,
+    features: ['Automático', 'Diesel', '4x4'],
+    description: 'Picape robusta e espaçosa'
   }
 ];
 

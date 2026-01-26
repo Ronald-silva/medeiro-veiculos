@@ -1,16 +1,25 @@
-// ✨ REFATORADO: Agora usa handlers compartilhados e arquitetura modular
-import { AGENT_SYSTEM_PROMPT, TOOL_DEFINITIONS } from '../../src/constants/agentPrompts.js'
+// ============================================
+// CAMILA 2.0 - WEBHOOK WHATSAPP (Evolution API)
+// ============================================
+// Sistema com memoria inteligente e personalizacao dinamica
+// ============================================
+
+import { TOOL_DEFINITIONS } from '../../src/constants/agentPrompts.js'
+import { buildDynamicPrompt, AGENT_SYSTEM_PROMPT } from '../../src/agent/prompts/index.js'
 import Anthropic from '@anthropic-ai/sdk'
-import { saveConversation, getConversation } from '../../src/lib/upstash.js'
 import logger from '../../src/lib/logger.js'
 
-// Importa handlers compartilhados
+// Sistema de memoria e analytics
+import { createMemory, convertToClaudeFormat } from '../../src/lib/memory.js'
+import { trackFunnelEvent, trackConversationMetrics } from '../../src/lib/analytics.js'
+
+// Handlers compartilhados
 import {
   convertToolsForClaude,
   processClaudeToolUses
 } from '../../src/api/handlers/index.js'
 
-// Importa utilidades
+// Utilidades
 import { getDateTimeContext } from '../../src/api/utils/index.js'
 
 // Cliente Anthropic
@@ -20,34 +29,82 @@ const anthropic = new Anthropic({
 
 const CONFIG = {
   model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
-  temperature: 0.7
+  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 1024,
+  temperature: 0.8,
+  historyLimit: 20,
+  useDynamicPrompt: true // Ativa sistema de personalizacao
 }
 
 /**
- * Processa mensagem com a Camila
+ * Processa mensagem com a Camila 2.0
+ * Usa sistema de memoria inteligente e personalizacao dinamica
  */
-async function processCamilaMessage(userMessage, conversationId) {
+async function processCamilaMessage(userMessage, conversationId, whatsappNumber, pushName = 'Cliente') {
+  const startTime = Date.now()
+  let toolsCalled = 0
+
   try {
-    // Busca histórico da conversa
-    const history = await getConversation(conversationId)
+    // Inicializa sistema de memoria
+    const memory = createMemory(whatsappNumber)
 
-    // Adiciona data/horário de Fortaleza usando utilidade compartilhada
-    const dateTimeContext = getDateTimeContext()
+    // Busca/cria perfil do cliente
+    let customerProfile = await memory.getCustomerProfile()
 
-    // Monta mensagens para Claude (remove timestamp que não é aceito pela API)
-    const messages = [
-      ...history.map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: userMessage + `\n${dateTimeContext}` }
-    ]
+    // Se nao existe, cria novo lead
+    if (!customerProfile) {
+      customerProfile = await memory.createLead({
+        name: pushName,
+        source: 'whatsapp'
+      })
 
-    logger.info('[WhatsApp] Processing with Camila:', {
-      conversationId,
-      historyLength: history.length,
-      messagePreview: userMessage.substring(0, 100)
+      // Registra evento de novo lead
+      await trackFunnelEvent(memory.leadId, 'lead_created', {
+        source: 'whatsapp',
+        firstMessage: userMessage.substring(0, 100)
+      })
+
+      logger.info('[WhatsApp] New lead created:', { whatsapp: whatsappNumber, name: pushName })
+    }
+
+    // Salva mensagem do usuario na memoria
+    await memory.addMessage('user', userMessage, {
+      intent: memory.analyzeIntent(userMessage),
+      sentiment: memory.analyzeSentiment(userMessage)
     })
 
-    // Converte tools para formato Claude usando handler compartilhado
+    // Busca contexto otimizado (memoria curta + longa)
+    const context = await memory.getOptimizedContext()
+
+    // Determina persona e temperatura para personalizacao
+    const persona = customerProfile?.profile?.persona || customerProfile?.persona || 'desconhecido'
+    const temperature = customerProfile?.temperature || 'morno'
+
+    // Constroi prompt dinamico personalizado
+    const systemPrompt = CONFIG.useDynamicPrompt
+      ? buildDynamicPrompt({
+          context,
+          persona,
+          temperature,
+          currentDate: new Date().toLocaleDateString('pt-BR'),
+          currentTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        })
+      : AGENT_SYSTEM_PROMPT
+
+    // Converte mensagens para formato Claude
+    const messages = [
+      ...convertToClaudeFormat(context.recentMessages || []),
+      { role: 'user', content: userMessage }
+    ]
+
+    logger.info('[WhatsApp] Processing with Camila 2.0:', {
+      conversationId,
+      leadId: memory.leadId,
+      persona,
+      temperature,
+      historyLength: messages.length
+    })
+
+    // Converte tools para formato Claude
     const claudeTools = convertToolsForClaude(TOOL_DEFINITIONS)
 
     // Chama Claude com tools
@@ -55,7 +112,7 @@ async function processCamilaMessage(userMessage, conversationId) {
       model: CONFIG.model,
       max_tokens: CONFIG.maxTokens,
       temperature: CONFIG.temperature,
-      system: AGENT_SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: messages,
       tools: claudeTools
     })
@@ -68,37 +125,30 @@ async function processCamilaMessage(userMessage, conversationId) {
       const toolUses = response.content.filter(block => block.type === 'tool_use')
 
       if (toolUses.length > 0) {
+        toolsCalled = toolUses.length
         logger.info(`[WhatsApp] Claude tool use: ${toolUses.length} tool(s) requested`)
 
-        // Processa TODAS as tools usando handler compartilhado
+        // Processa TODAS as tools
         const toolResults = await processClaudeToolUses(toolUses, conversationId)
 
-        // Chama Claude novamente com TODOS os resultados
+        // Chama Claude novamente com resultados
         const messagesWithToolResult = [
           ...messages,
-          {
-            role: 'assistant',
-            content: response.content
-          },
-          {
-            role: 'user',
-            content: toolResults
-          }
+          { role: 'assistant', content: response.content },
+          { role: 'user', content: toolResults }
         ]
-
-        logger.debug(`[WhatsApp] Sending ${messagesWithToolResult.length} messages to Claude after tool execution`)
 
         const finalResponse = await anthropic.messages.create({
           model: CONFIG.model,
           max_tokens: CONFIG.maxTokens,
           temperature: CONFIG.temperature,
-          system: AGENT_SYSTEM_PROMPT,
+          system: systemPrompt,
           messages: messagesWithToolResult,
           tools: claudeTools
         })
 
         const textBlock = finalResponse.content.find(block => block.type === 'text')
-        assistantMessage = textBlock?.text || 'Desculpe, não entendi.'
+        assistantMessage = textBlock?.text || 'Me conta mais sobre o que voce procura!'
         toolCalled = toolUses.map(t => t.name).join(', ')
       }
     } else {
@@ -107,28 +157,36 @@ async function processCamilaMessage(userMessage, conversationId) {
       assistantMessage = textBlock?.text || response.content[0].text
     }
 
-    // Salva no histórico
-    const updatedHistory = [
-      ...history,
-      { role: 'user', content: userMessage, timestamp: new Date().toISOString() },
-      { role: 'assistant', content: assistantMessage, timestamp: new Date().toISOString() }
-    ]
+    // Salva resposta da Camila na memoria
+    await memory.addMessage('assistant', assistantMessage, { toolCalled })
 
-    await saveConversation(conversationId, updatedHistory.slice(-10), 86400)
+    // Atualiza score do lead baseado na interacao
+    await memory.updateLeadScore()
 
-    if (toolCalled) {
-      logger.info(`[WhatsApp] Camila response with tool: ${toolCalled}`, {
-        messagePreview: assistantMessage.substring(0, 100)
-      })
-    } else {
-      logger.info('[WhatsApp] Camila response generated:', {
-        messagePreview: assistantMessage.substring(0, 100)
-      })
-    }
+    // Registra metricas da conversa
+    const responseTime = Date.now() - startTime
+    await trackConversationMetrics({
+      leadId: memory.leadId,
+      messagesCount: 2, // user + assistant
+      toolsCalled,
+      responseTimeAvg: responseTime,
+      sentiment: memory.analyzeSentiment(userMessage).sentiment,
+      intent: memory.analyzeIntent(userMessage).intent
+    })
+
+    // Registra atividade
+    await memory.logActivity('message_received', `Cliente enviou: ${userMessage.substring(0, 50)}...`)
+
+    logger.info('[WhatsApp] Camila 2.0 response:', {
+      responseTime: `${responseTime}ms`,
+      toolCalled,
+      messagePreview: assistantMessage.substring(0, 100)
+    })
 
     return assistantMessage
+
   } catch (error) {
-    logger.error('[WhatsApp] Error processing with Camila:', error)
+    logger.error('[WhatsApp] Error processing with Camila 2.0:', error)
     throw error
   }
 }
@@ -319,8 +377,11 @@ export default async function handler(req, res) {
     // ID da conversa = número do WhatsApp
     const conversationId = `whatsapp_${phoneNumber}`
 
-    // Processa com Camila
-    const camilaResponse = await processCamilaMessage(message, conversationId)
+    // Extrai numero limpo (sem @s.whatsapp.net)
+    const cleanPhone = phoneNumber.replace('@s.whatsapp.net', '')
+
+    // Processa com Camila 2.0 (passa numero e nome para memoria)
+    const camilaResponse = await processCamilaMessage(message, conversationId, cleanPhone, pushName)
 
     // Envia resposta de volta via Evolution API
     // Usa a variável de ambiente (mais confiável após renomear instância)

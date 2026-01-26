@@ -27,8 +27,9 @@ const twilioClient = twilio(
 
 const CONFIG = {
   model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
-  temperature: 0.7
+  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 1024,
+  temperature: 0.8,  // Mais criatividade para respostas naturais
+  historyLimit: 20   // Memória expandida
 }
 
 /**
@@ -105,7 +106,7 @@ async function processCamilaMessage(userMessage, conversationId) {
         })
 
         const textBlock = finalResponse.content.find(block => block.type === 'text')
-        assistantMessage = textBlock?.text || 'Desculpe, não entendi.'
+        assistantMessage = textBlock?.text || 'Me conta mais sobre o que você procura!'
         toolCalled = toolUses.map(t => t.name).join(', ')
       }
     } else {
@@ -114,14 +115,14 @@ async function processCamilaMessage(userMessage, conversationId) {
       assistantMessage = textBlock?.text || response.content[0].text
     }
 
-    // Salva no histórico
+    // Salva no histórico (memória expandida para contexto melhor)
     const updatedHistory = [
       ...history,
       { role: 'user', content: userMessage, timestamp: new Date().toISOString() },
       { role: 'assistant', content: assistantMessage, timestamp: new Date().toISOString() }
     ]
 
-    await saveConversation(conversationId, updatedHistory.slice(-10), 86400)
+    await saveConversation(conversationId, updatedHistory.slice(-CONFIG.historyLimit), 86400)
 
     if (toolCalled) {
       logger.info(`[Twilio] Camila response with tool: ${toolCalled}`, {

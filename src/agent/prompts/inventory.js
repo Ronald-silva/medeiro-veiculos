@@ -1,14 +1,29 @@
-export const INVENTORY = `📊 ESTOQUE ATUAL (13 veículos):
+export const INVENTORY = `🚨🚨🚨 PROTOCOLO DE ESTOQUE - OBRIGATÓRIO 🚨🚨🚨
 
-**Sedans**: Corolla 91 mil, Spacefox 31 mil
-**Hatches**: Mobi 39 mil, Argo 63 mil
-**SUVs**: Vitara 48 mil, HR-V 105 mil, Tracker 99 mil, Pajero 95 mil, Kicks 115 mil
-**Picapes**: Hilux 115 mil (cor prata), Ranger 115 mil, L200 Triton 95 mil (ÚNICO FLEX disponível)
-**Moto**: Ninja 32 mil
+**REGRA DE OURO**: NUNCA mencione um veículo sem ANTES chamar recommend_vehicles!
 
-🚨 **INFORMAÇÕES IMPORTANTES:**
-- **Kwid**: VENDIDO - não oferece mais
-- **Hilux**: Cor PRATA (não vermelha)
-- **L200 Triton**: É o ÚNICO carro FLEX no estoque
+📊 **FAIXAS DE PREÇO APROXIMADAS** (use recommend_vehicles para dados EXATOS):
+- Até 40 mil: Spacefox, Ninja, Mobi
+- 40-70 mil: Vitara, Argo
+- 70-100 mil: Corolla, L200 Triton, Pajero, Tracker
+- Acima 100 mil: HR-V, Kicks, Hilux, Ranger
 
-⚠️ SEMPRE use recommend_vehicles para dados REAIS antes de recomendar!`
+🛑 **O QUE VOCÊ NÃO PODE FAZER:**
+❌ Citar preço sem recommend_vehicles
+❌ Dizer "temos um Civic" se não está no sistema
+❌ Inventar características (cor, ano, km)
+❌ Prometer disponibilidade sem confirmar
+
+✅ **O QUE VOCÊ DEVE FAZER:**
+✅ SEMPRE chamar recommend_vehicles com o orçamento do cliente
+✅ Se retornar vazio: "No momento não tenho opções nessa faixa, mas posso te mostrar alternativas?"
+✅ Citar APENAS os veículos que o sistema retornou
+✅ Usar os dados EXATOS: nome, preço, ano, km
+
+🚨 **INFORMAÇÕES FIXAS:**
+- Kwid: VENDIDO - não existe mais
+- Hilux: cor PRATA (não vermelha)
+- L200 Triton: ÚNICO veículo FLEX
+
+💡 **SE O CLIENTE PEDIR ALGO QUE NÃO TEMOS:**
+"Olha, no momento não tenho [tipo] nessa faixa de [valor]. Mas tenho [alternativa do sistema]. Quer que eu te mostre?"`

@@ -30,7 +30,7 @@ export default function AppointmentsTable({ appointments, onUpdateStatus, onDele
                   {appointment.scheduled_time}
                 </td>
                 <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
-                  {appointment.lead?.nome || appointment.customer_name || 'N/A'}
+                  {appointment.lead?.name || appointment.customer_name || 'N/A'}
                 </td>
                 <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-600">
                   {appointment.lead?.whatsapp || appointment.phone}
@@ -68,7 +68,7 @@ export default function AppointmentsTable({ appointments, onUpdateStatus, onDele
                       Cancelado
                     </span>
                   )}
-                  {appointment.status === 'pending' && (
+                  {appointment.status === 'pendente' && (
                     <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                       Pendente
                     </span>
@@ -81,6 +81,7 @@ export default function AppointmentsTable({ appointments, onUpdateStatus, onDele
                       onChange={(e) => onUpdateStatus(appointment.id, e.target.value)}
                       className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="pendente">Pendente</option>
                       <option value="confirmado">Confirmado</option>
                       <option value="compareceu">Compareceu</option>
                       <option value="faltou">Faltou</option>
@@ -90,7 +91,7 @@ export default function AppointmentsTable({ appointments, onUpdateStatus, onDele
                     <button
                       onClick={() => onDelete(
                         appointment.id,
-                        appointment.lead?.nome || appointment.customer_name || 'este agendamento'
+                        appointment.lead?.name || appointment.customer_name || 'este agendamento'
                       )}
                       className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                       title="Deletar agendamento"

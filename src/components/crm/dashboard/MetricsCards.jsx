@@ -53,8 +53,8 @@ export default function MetricsCards({ stats = {}, sales = [], leads = [] }) {
 
   // Leads por status
   const leadsNovos = leads.filter(l => l.status === 'novo').length
-  const leadsEmContato = leads.filter(l => l.status === 'em_contato' || l.status === 'contatado').length
-  const leadsConvertidos = leads.filter(l => l.status === 'convertido').length
+  const leadsEmContato = leads.filter(l => l.status === 'em_conversa' || l.status === 'qualificado').length
+  const leadsConvertidos = leads.filter(l => l.status === 'fechado').length
 
   return (
     <>

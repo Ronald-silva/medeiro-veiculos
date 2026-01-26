@@ -3,13 +3,15 @@ import { updateLeadStatus } from '../../lib/supabase'
 
 const STATUS_LABELS = {
   novo: { label: 'Novo', color: 'bg-blue-100 text-blue-800' },
-  contatado: { label: 'Contatado', color: 'bg-yellow-100 text-yellow-800' },
+  em_conversa: { label: 'Em Conversa', color: 'bg-yellow-100 text-yellow-800' },
   qualificado: { label: 'Qualificado', color: 'bg-purple-100 text-purple-800' },
   agendado: { label: 'Agendado', color: 'bg-indigo-100 text-indigo-800' },
   visitou: { label: 'Visitou', color: 'bg-pink-100 text-pink-800' },
   negociando: { label: 'Negociando', color: 'bg-orange-100 text-orange-800' },
+  proposta: { label: 'Proposta', color: 'bg-cyan-100 text-cyan-800' },
   fechado: { label: 'Fechado', color: 'bg-green-100 text-green-800' },
-  perdido: { label: 'Perdido', color: 'bg-red-100 text-red-800' }
+  perdido: { label: 'Perdido', color: 'bg-red-100 text-red-800' },
+  reengajar: { label: 'Reengajar', color: 'bg-amber-100 text-amber-800' }
 }
 
 export default function LeadsTable({ leads, onUpdate }) {
@@ -95,7 +97,7 @@ export default function LeadsTable({ leads, onUpdate }) {
             {filteredLeads.map((lead) => (
               <tr key={lead.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{lead.nome}</div>
+                  <div className="text-sm font-medium text-gray-900">{lead.name}</div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">{lead.whatsapp}</div>
@@ -104,11 +106,11 @@ export default function LeadsTable({ leads, onUpdate }) {
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{lead.tipo_carro || 'N/A'}</div>
+                  <div className="text-sm text-gray-900">{lead.vehicle_type_interest || 'N/A'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {lead.orcamento ? `R$ ${lead.orcamento.toLocaleString('pt-BR')}` : 'N/A'}
+                    {lead.budget_text || (lead.budget_max ? `R$ ${lead.budget_max.toLocaleString('pt-BR')}` : 'N/A')}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -1,11 +1,16 @@
-import { isSupabaseConfigured, saveAppointment as saveAppointmentToSupabase } from '../../lib/supabaseClient.js';
+// ============================================
+// CAMILA 2.0 - HANDLER DE AGENDAMENTOS
+// ============================================
+// Integrado com sistema de leads e funil de vendas
+// ============================================
+
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
 import { convertBrazilianDateToISO } from '../utils/dateTime.js';
+import { trackFunnelEvent } from '../../lib/analytics.js';
 import logger from '../../lib/logger.js';
 
 /**
  * Valida parâmetros obrigatórios do agendamento
- * @param {object} params - Parâmetros do agendamento
- * @returns {object} Resultado da validação { valid: boolean, error?: string, message?: string }
  */
 function validateAppointmentParams(params) {
   const { customerName, phone } = params;
@@ -23,32 +28,125 @@ function validateAppointmentParams(params) {
 }
 
 /**
- * Prepara dados do agendamento
- * @param {object} params - Parâmetros brutos do agendamento
- * @returns {object} Dados formatados para salvar
+ * Busca ou cria lead pelo telefone
  */
-function prepareAppointmentData(params) {
+async function findOrCreateLead(phone, customerName) {
+  if (!isSupabaseConfigured()) return null;
+
+  try {
+    // Limpa o telefone
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    // Busca lead existente
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('id, status, score')
+      .eq('whatsapp', cleanPhone)
+      .single();
+
+    if (existingLead) {
+      return existingLead;
+    }
+
+    // Cria novo lead se não existe
+    const { data: newLead, error } = await supabase
+      .from('leads')
+      .insert([{
+        whatsapp: cleanPhone,
+        name: customerName,
+        status: 'novo',
+        source: 'whatsapp',
+        first_contact_at: new Date().toISOString(),
+        last_contact_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Error creating lead:', error);
+      return null;
+    }
+
+    logger.info('New lead created for appointment:', { leadId: newLead.id });
+    return newLead;
+  } catch (error) {
+    logger.error('Error in findOrCreateLead:', error);
+    return null;
+  }
+}
+
+/**
+ * Atualiza status do lead para 'agendado'
+ */
+async function updateLeadToScheduled(leadId) {
+  if (!isSupabaseConfigured() || !leadId) return;
+
+  try {
+    await supabase
+      .from('leads')
+      .update({
+        status: 'agendado',
+        last_contact_at: new Date().toISOString()
+      })
+      .eq('id', leadId);
+
+    logger.info('Lead status updated to agendado:', { leadId });
+  } catch (error) {
+    logger.error('Error updating lead status:', error);
+  }
+}
+
+/**
+ * Registra atividade do agendamento no lead
+ */
+async function logAppointmentActivity(leadId, appointmentData) {
+  if (!isSupabaseConfigured() || !leadId) return;
+
+  try {
+    await supabase
+      .from('lead_activities')
+      .insert([{
+        lead_id: leadId,
+        activity_type: 'appointment_scheduled',
+        description: `Agendamento: ${appointmentData.visit_type} para ${appointmentData.scheduled_date} às ${appointmentData.scheduled_time}`,
+        metadata: {
+          visit_type: appointmentData.visit_type,
+          scheduled_date: appointmentData.scheduled_date,
+          scheduled_time: appointmentData.scheduled_time,
+          vehicle_interest: appointmentData.vehicle_interest
+        },
+        performed_by: 'camila',
+        score_change: 15 // Agendamento adiciona 15 pontos
+      }]);
+  } catch (error) {
+    logger.error('Error logging appointment activity:', error);
+  }
+}
+
+/**
+ * Prepara dados do agendamento para o NOVO schema
+ */
+function prepareAppointmentData(params, leadId = null) {
   const { customerName, phone, preferredDate, preferredTime, visitType, vehicleInterest } = params;
 
-  // Converter data do formato brasileiro para ISO se fornecida
-  const scheduledDate = convertBrazilianDateToISO(preferredDate);
+  // Converter data do formato brasileiro para ISO
+  const scheduledDate = convertBrazilianDateToISO(preferredDate) || new Date().toISOString().split('T')[0];
 
   return {
-    customer_name: customerName,
-    phone: phone,
+    lead_id: leadId,
     scheduled_date: scheduledDate,
-    scheduled_time: preferredTime || 'a confirmar',
-    visit_type: visitType || 'visit',
+    scheduled_time: preferredTime || '14:00',
+    visit_type: visitType || 'visita',
     vehicle_interest: vehicleInterest || '',
-    status: 'confirmado',
+    status: 'pendente', // Começa como pendente, muda para confirmado após confirmação
+    confirmation_sent: false,
+    reminder_sent: false,
     created_at: new Date().toISOString()
   };
 }
 
 /**
- * Salva agendamento no Supabase
- * @param {object} appointmentData - Dados do agendamento
- * @returns {Promise<object>} Resultado do salvamento
+ * Salva agendamento no Supabase (NOVO SCHEMA)
  */
 async function saveToSupabase(appointmentData) {
   try {
@@ -57,19 +155,23 @@ async function saveToSupabase(appointmentData) {
       return { success: false, reason: 'not_configured' };
     }
 
-    const result = await saveAppointmentToSupabase(appointmentData);
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([appointmentData])
+      .select()
+      .single();
 
-    if (result.success) {
-      logger.info('Appointment saved to Supabase:', result.data.id);
-      return {
-        success: true,
-        appointmentId: result.data.id,
-        data: result.data
-      };
+    if (error) {
+      logger.error('Error saving appointment:', error);
+      return { success: false, reason: 'save_failed', error: error.message };
     }
 
-    logger.warn('Failed to save appointment to Supabase:', result.error);
-    return { success: false, reason: 'save_failed', error: result.error };
+    logger.info('Appointment saved to Supabase:', { id: data.id });
+    return {
+      success: true,
+      appointmentId: data.id,
+      data: data
+    };
   } catch (error) {
     logger.error('Error saving to Supabase:', error);
     return { success: false, reason: 'exception', error: error.message };
@@ -78,12 +180,14 @@ async function saveToSupabase(appointmentData) {
 
 /**
  * Agenda visita presencial ou test drive
+ * INTEGRADO com sistema de leads e funil de vendas
+ *
  * @param {object} params - Parâmetros do agendamento
  * @param {string} params.customerName - Nome completo do cliente
  * @param {string} params.phone - WhatsApp do cliente
  * @param {string} params.preferredDate - Data preferida (DD/MM/YYYY)
  * @param {string} params.preferredTime - Horário preferido
- * @param {string} params.visitType - Tipo de visita (test_drive ou visit)
+ * @param {string} params.visitType - Tipo de visita (test_drive ou visita)
  * @param {string} params.vehicleInterest - Veículo de interesse
  * @returns {Promise<object>} Resultado do agendamento
  */
@@ -105,32 +209,56 @@ export async function scheduleVisit(params) {
       };
     }
 
-    // Prepara dados do agendamento
-    const appointmentData = prepareAppointmentData(params);
+    // 1. Busca ou cria lead pelo telefone
+    const lead = await findOrCreateLead(params.phone, params.customerName);
+    const leadId = lead?.id || null;
 
-    logger.info('Scheduling appointment:', {
-      customer: appointmentData.customer_name,
-      phone: appointmentData.phone,
-      type: appointmentData.visit_type
+    logger.info('Scheduling appointment for lead:', {
+      leadId,
+      customerName: params.customerName,
+      visitType: params.visitType
     });
 
-    // Tenta salvar no Supabase
+    // 2. Prepara dados do agendamento COM lead_id
+    const appointmentData = prepareAppointmentData(params, leadId);
+
+    // 3. Salva agendamento no Supabase
     const dbResult = await saveToSupabase(appointmentData);
 
-    if (dbResult.success) {
+    if (dbResult.success && leadId) {
+      // 4. Atualiza status do lead para 'agendado'
+      await updateLeadToScheduled(leadId);
+
+      // 5. Registra atividade no histórico do lead
+      await logAppointmentActivity(leadId, appointmentData);
+
+      // 6. Registra evento no funil de vendas
+      await trackFunnelEvent(leadId, 'appointment_scheduled', {
+        appointmentId: dbResult.appointmentId,
+        visitType: appointmentData.visit_type,
+        scheduledDate: appointmentData.scheduled_date
+      });
+
+      // Formata data para exibição
+      const displayDate = params.preferredDate || 'em breve';
+      const displayTime = params.preferredTime || 'horário a confirmar';
+
       return {
         success: true,
         appointmentId: dbResult.appointmentId,
-        message: `Agendamento confirmado! Em breve entraremos em contato via WhatsApp (${params.phone}).`
+        leadId: leadId,
+        message: `Perfeito! Agendado para ${displayDate} às ${displayTime}. O Adel vai te receber! Vou mandar uma confirmação antes.`
       };
     }
 
     // Fallback se Supabase não estiver disponível
-    logger.info('Appointment logged (Supabase unavailable):', appointmentData);
+    if (!dbResult.success) {
+      logger.info('Appointment logged (Supabase unavailable):', appointmentData);
+    }
 
     return {
       success: true,
-      message: `Anotado! Vou repassar para nossa equipe entrar em contato no WhatsApp ${params.phone}.`
+      message: `Anotado! Vou repassar para o Adel entrar em contato pelo WhatsApp ${params.phone} para confirmar o horário.`
     };
   } catch (error) {
     logger.error('Error in scheduleVisit:', error);

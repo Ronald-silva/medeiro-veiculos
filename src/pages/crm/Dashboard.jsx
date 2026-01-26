@@ -259,7 +259,7 @@ export default function CRMDashboard() {
                             <div className="flex justify-between items-start">
                               <div>
                                 <p className="font-semibold text-lg">
-                                  {appointment.lead?.nome || appointment.customer_name || 'Cliente'}
+                                  {appointment.lead?.name || appointment.customer_name || 'Cliente'}
                                 </p>
                                 <p className="text-sm text-blue-100">
                                   📞 {appointment.lead?.whatsapp || appointment.phone}

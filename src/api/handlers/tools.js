@@ -221,22 +221,25 @@ export async function processOpenAIToolCalls(toolCalls, conversationId = null) {
  * @returns {string} Texto extraído
  */
 export function extractTextFromAIResponse(response, provider = 'claude') {
+  // Fallback que avança a conversa ao invés de travar
+  const FALLBACK_RESPONSE = 'Me conta mais sobre o que você procura! Qual tipo de carro te interessa?';
+
   try {
     if (provider === 'claude') {
       // Claude retorna array de content blocks
       const textBlock = response.content?.find(block => block.type === 'text');
-      return textBlock?.text || response.content?.[0]?.text || 'Desculpe, não entendi.';
+      return textBlock?.text || response.content?.[0]?.text || FALLBACK_RESPONSE;
     }
 
     if (provider === 'openai') {
       // OpenAI retorna message.content
-      return response.choices?.[0]?.message?.content || 'Desculpe, não entendi.';
+      return response.choices?.[0]?.message?.content || FALLBACK_RESPONSE;
     }
 
-    return 'Desculpe, não entendi.';
+    return FALLBACK_RESPONSE;
   } catch (error) {
     logger.error('Error extracting text from AI response:', error);
-    return 'Desculpe, não entendi.';
+    return FALLBACK_RESPONSE;
   }
 }
 
