@@ -20,6 +20,16 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
 
+  // Dispara evento do Facebook Pixel quando abre o chat
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', {
+        content_name: initialContext?.vehicle || 'Chat Geral',
+        content_category: 'Lead'
+      })
+    }
+  }, [isOpen, initialContext])
+
   // Inicializa conversa
   useEffect(() => {
     if (isOpen && !conversationId) {
@@ -59,6 +69,15 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
   // Handler de envio de mensagem
   const handleSendMessage = async (messageText) => {
     if (!messageText.trim() || !conversationId) return
+
+    // Dispara evento Lead no Facebook Pixel na primeira mensagem
+    const isFirstUserMessage = messages.filter(m => m.role === 'user').length === 0
+    if (isFirstUserMessage && typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'Lead', {
+        content_name: initialContext?.vehicle || 'Chat Geral',
+        content_category: 'Interesse'
+      })
+    }
 
     // Limpa quick replies após primeira interação
     setQuickReplies([])
