@@ -5,7 +5,6 @@ const testimonials = [
     id: 1,
     name: 'João Silva',
     role: 'Empresário',
-    image: '/testimonials/joao.jpg',
     content: 'Excelente atendimento! Consegui o carro dos meus sonhos com um financiamento que coube no meu bolso.',
     car: 'Honda HR-V EXL 2022'
   },
@@ -13,7 +12,6 @@ const testimonials = [
     id: 2,
     name: 'Maria Santos',
     role: 'Médica',
-    image: '/testimonials/maria.jpg',
     content: 'Super recomendo! Processo rápido e transparente. O carro está impecável, exatamente como anunciado.',
     car: 'Toyota Corolla XEI 2023'
   },
@@ -21,11 +19,20 @@ const testimonials = [
     id: 3,
     name: 'Pedro Costa',
     role: 'Professor',
-    image: '/testimonials/pedro.jpg',
     content: 'Melhor experiência na compra de um seminovo. Equipe muito profissional e atenciosa.',
     car: 'Jeep Compass Limited 2022'
   }
 ]
+
+// Função para obter as iniciais do nome
+function getInitials(name) {
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 export default function Testimonials() {
   return (
@@ -62,11 +69,11 @@ export default function Testimonials() {
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
             >
               <div className="flex items-center mb-4">
-                <img
-                  src={testimonial.image}
-                  alt={testimonial.name}
-                  className="w-16 h-16 rounded-full object-cover mr-4"
-                />
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mr-4">
+                  <span className="text-white text-xl font-bold">
+                    {getInitials(testimonial.name)}
+                  </span>
+                </div>
                 <div>
                   <h3 className="font-semibold text-lg">{testimonial.name}</h3>
                   <p className="text-gray-600">{testimonial.role}</p>

@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Avatar da Consultora Camila
  * Componente reutilizável com foto real profissional
@@ -21,7 +19,6 @@ export default function ConsultoraAvatar({ size = 'md', className = '' }) {
         alt="Consultora Camila - Medeiros Veículos"
         className="w-full h-full object-cover"
         style={{
-          imageRendering: 'crisp-edges',
           imageRendering: '-webkit-optimize-contrast',
           backfaceVisibility: 'hidden',
           transform: 'translateZ(0)',

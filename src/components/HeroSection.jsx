@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import ConsultoraAvatar from './ConsultoraAvatar'
 
 export default function HeroSection({ onCtaClick }) {
   return (
@@ -42,10 +43,10 @@ export default function HeroSection({ onCtaClick }) {
         >
           <button
             onClick={onCtaClick}
-            className="btn btn-primary text-lg px-8 py-4 shadow-2xl hover:shadow-accent/50 transition-all duration-300"
+            className="btn btn-primary text-lg px-8 py-4 shadow-2xl hover:shadow-accent/50 transition-all duration-300 flex items-center gap-3"
           >
-            <i className="fas fa-robot mr-3 text-xl"></i>
-            <span className="font-semibold">Falar com Consultor Especializado 24/7</span>
+            <ConsultoraAvatar size="sm" className="w-10 h-10 border-white/50" />
+            <span className="font-semibold">Fale com a Camila</span>
           </button>
         </motion.div>
 

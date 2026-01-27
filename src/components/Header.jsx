@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Rating from './ui/Rating'
+import ConsultoraAvatar from './ConsultoraAvatar'
 
 export default function Header({ onChatOpen }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -34,10 +35,10 @@ export default function Header({ onChatOpen }) {
             <Rating score={4.9} reviews={127} showSource={false} />
             <button
               onClick={onChatOpen}
-              className="btn btn-primary shadow-lg hover:shadow-xl transition-all duration-300"
+              className="btn btn-primary shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
             >
-              <i className="fas fa-user-circle mr-2"></i>
-              Consultora Camila
+              <ConsultoraAvatar size="sm" className="w-8 h-8 border-white/50" />
+              <span>Fale com a Camila</span>
             </button>
           </nav>
 
@@ -75,10 +76,10 @@ export default function Header({ onChatOpen }) {
                   onChatOpen();
                   setIsMenuOpen(false);
                 }}
-                className="btn btn-primary w-full"
+                className="btn btn-primary w-full flex items-center justify-center gap-2"
               >
-                <i className="fas fa-user-circle mr-2"></i>
-                Consultora Camila
+                <ConsultoraAvatar size="sm" className="w-8 h-8 border-white/50" />
+                <span>Fale com a Camila</span>
               </button>
               <a href="tel:+5585920021150" className="text-gray-600 hover:text-primary text-center">
                 <i className="fas fa-phone mr-2"></i>

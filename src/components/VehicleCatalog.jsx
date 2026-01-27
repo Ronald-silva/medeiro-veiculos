@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFeaturedCars } from '../data/carsInventory';
 import Badge from './ui/Badge';
+import ConsultoraAvatar from './ConsultoraAvatar';
 
 export default function VehicleCatalog({ onVehicleInterest }) {
   const [vehicles] = useState(getFeaturedCars()); // Usa carros em destaque
@@ -252,18 +253,18 @@ export default function VehicleCatalog({ onVehicleInterest }) {
                         {formatPrice(vehicle.price)}
                       </p>
 
-                      {/* Action Button - APENAS Consultor IA */}
+                      {/* Action Button - Consultora Camila */}
                       <button
                         onClick={() => {
                           if (onVehicleInterest) onVehicleInterest(vehicle.name);
                         }}
-                        className="w-full btn btn-primary"
+                        className="w-full btn btn-primary flex items-center justify-center gap-2"
                       >
-                        <i className="fas fa-robot mr-2"></i>
-                        Falar com Consultor Especializado
+                        <ConsultoraAvatar size="sm" className="w-7 h-7 border-white/50" />
+                        <span>Falar com a Camila</span>
                       </button>
                       <p className="text-xs text-gray-500 text-center mt-2">
-                        Atendimento qualificado 24/7 • Resposta imediata
+                        Consultora especializada • Atendimento 24/7
                       </p>
                     </div>
                   </div>
@@ -290,17 +291,17 @@ export default function VehicleCatalog({ onVehicleInterest }) {
           </a>
 
           <p className="text-gray-600">
-            Ou fale diretamente com nosso consultor
+            Ou fale diretamente com nossa consultora
           </p>
 
           <button
             onClick={() => {
               if (onVehicleInterest) onVehicleInterest('Catálogo Completo');
             }}
-            className="btn btn-accent"
+            className="btn btn-accent flex items-center justify-center gap-2 mx-auto"
           >
-            <i className="fas fa-user-circle mr-2"></i>
-            Consultora Camila
+            <ConsultoraAvatar size="sm" className="w-8 h-8 border-white/50" />
+            <span>Converse com a Camila</span>
           </button>
         </motion.div>
       </div>
