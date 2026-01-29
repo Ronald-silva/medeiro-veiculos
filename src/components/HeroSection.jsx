@@ -84,7 +84,7 @@ export default function HeroSection({ onCtaClick }) {
               <div className="bg-accent/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i className={`fas ${benefit.icon} text-3xl text-accent`}></i>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
+              <h2 className="text-xl font-semibold mb-2">{benefit.title}</h2>
               <p className="text-gray-300">{benefit.description}</p>
             </motion.div>
           ))}

@@ -14,18 +14,17 @@ export default function ConsultoraAvatar({ size = 'md', className = '' }) {
 
   return (
     <div className={`${sizes[size]} rounded-full overflow-hidden border-2 border-white shadow-lg ${className}`}>
-      <img
-        src="/perfil-camila.png"
-        alt="Consultora Camila - Medeiros Veículos"
-        className="w-full h-full object-cover"
-        style={{
-          imageRendering: '-webkit-optimize-contrast',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-          WebkitFontSmoothing: 'antialiased'
-        }}
-        loading="eager"
-      />
+      <picture>
+        <source srcSet="/perfil-camila.webp" type="image/webp" />
+        <img
+          src="/perfil-camila.png"
+          alt="Consultora Camila - Medeiros Veículos"
+          className="w-full h-full object-cover"
+          width="100"
+          height="100"
+          loading="eager"
+        />
+      </picture>
     </div>
   );
 }

@@ -81,10 +81,11 @@ export default function VehicleCatalog({ onVehicleInterest }) {
 
               {/* Brand Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="brand-filter" className="block text-sm font-medium text-gray-700 mb-2">
                   Marca
                 </label>
                 <select
+                  id="brand-filter"
                   value={selectedBrand}
                   onChange={(e) => setSelectedBrand(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -97,10 +98,11 @@ export default function VehicleCatalog({ onVehicleInterest }) {
 
               {/* Price Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="price-range" className="block text-sm font-medium text-gray-700 mb-2">
                   Faixa de Preço (até {formatPrice(priceRange.max)})
                 </label>
                 <input
+                  id="price-range"
                   type="range"
                   min="0"
                   max="200000"
@@ -108,6 +110,9 @@ export default function VehicleCatalog({ onVehicleInterest }) {
                   value={priceRange.max}
                   onChange={(e) => setPriceRange({ ...priceRange, max: Number(e.target.value) })}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  aria-valuemin={0}
+                  aria-valuemax={200000}
+                  aria-valuenow={priceRange.max}
                 />
               </div>
             </div>

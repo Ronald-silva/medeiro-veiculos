@@ -55,13 +55,14 @@ export default function Footer() {
               📢 Acompanhe nossas ofertas exclusivas e avaliações de clientes no Instagram!
             </p>
             <div className="flex justify-center space-x-4">
-              <a 
-                href="https://www.instagram.com/medeiro.veiculos/?igsh=aGt3dHExdWtxdng4" 
-                target="_blank" 
+              <a
+                href="https://www.instagram.com/medeiro.veiculos/?igsh=aGt3dHExdWtxdng4"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-2xl hover:text-accent transform hover:scale-110 transition-transform duration-200"
+                aria-label="Siga Medeiros Veículos no Instagram"
               >
-                <i className="fab fa-instagram"></i>
+                <i className="fab fa-instagram" aria-hidden="true"></i>
               </a>
             </div>
           </div>

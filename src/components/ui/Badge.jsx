@@ -10,7 +10,7 @@ export default function Badge({
     default: 'bg-gray-100 text-gray-800',
     urgency: 'bg-red-500 text-white shadow-lg',
     sold: 'bg-gray-800 text-white',
-    limited: 'bg-orange-500 text-white shadow-md',
+    limited: 'bg-amber-700 text-white shadow-md',
     verified: 'bg-green-500 text-white',
     live: 'bg-blue-500 text-white',
     primary: 'bg-primary text-white',

@@ -46,6 +46,8 @@ export default function Header({ onChatOpen }) {
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden text-gray-600 hover:text-primary"
+            aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={isMenuOpen}
           >
             <i className={`fas fa-${isMenuOpen ? 'times' : 'bars'} text-2xl`}></i>
           </button>
