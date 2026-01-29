@@ -101,23 +101,19 @@ export default defineConfig({
         main: './index.html'
       },
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            // React core - essencial
-            if (id.includes('react-dom') || id.includes('/react/')) return 'vendor-react'
-            // Supabase - apenas CRM
-            if (id.includes('@supabase')) return 'vendor-supabase'
-            // Framer Motion - animações
-            if (id.includes('framer-motion')) return 'vendor-framer'
-            // Swiper - carrosséis
-            if (id.includes('swiper')) return 'vendor-swiper'
-            // Outros vendors
-            return 'vendor'
-          }
-          // CRM separado do bundle principal
-          if (id.includes('/pages/crm/') || id.includes('/components/crm/')) {
-            return 'crm'
-          }
+        manualChunks: {
+          'vendor-react': [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            'react-helmet-async'
+          ],
+          'vendor-supabase': [
+            '@supabase/supabase-js'
+          ],
+          'vendor-framer': [
+            'framer-motion'
+          ]
         },
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
