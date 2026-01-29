@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './contexts/AuthContext'
@@ -9,11 +9,13 @@ import Testimonials from './components/Testimonials'
 import Footer from './components/Footer'
 import ConversationalLeadForm from './components/ConversationalLeadForm/ConversationalLeadForm'
 import TrustSignals from './components/conversion/TrustSignals'
-import CatalogPage from './pages/CatalogPage'
-import CRMLogin from './pages/crm/Login'
-import CRMDashboard from './pages/crm/Dashboard'
-import ExecutiveReport from './pages/crm/ExecutiveReport'
-import ProtectedRoute from './components/crm/ProtectedRoute'
+
+// Lazy load - carrega apenas quando necessário
+const CatalogPage = lazy(() => import('./pages/CatalogPage'))
+const CRMLogin = lazy(() => import('./pages/crm/Login'))
+const CRMDashboard = lazy(() => import('./pages/crm/Dashboard'))
+const ExecutiveReport = lazy(() => import('./pages/crm/ExecutiveReport'))
+const ProtectedRoute = lazy(() => import('./components/crm/ProtectedRoute'))
 
 function HomePage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -46,42 +48,51 @@ function HomePage() {
   )
 }
 
+// Loading fallback simples
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+  </div>
+)
+
 function App() {
   return (
     <HelmetProvider>
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Página principal */}
+            {/* Página principal - carrega direto */}
             <Route path="/" element={<HomePage />} />
 
-            {/* Catálogo de Veículos */}
-            <Route path="/catalogo" element={<CatalogPage />} />
+            {/* Rotas lazy-loaded */}
+            <Route path="/catalogo" element={
+              <Suspense fallback={<PageLoader />}>
+                <CatalogPage />
+              </Suspense>
+            } />
 
-            {/* CRM - Login */}
-            <Route path="/crm/login" element={<CRMLogin />} />
+            <Route path="/crm/login" element={
+              <Suspense fallback={<PageLoader />}>
+                <CRMLogin />
+              </Suspense>
+            } />
 
-            {/* CRM - Dashboard (Protegido) */}
-            <Route
-              path="/crm"
-              element={
+            <Route path="/crm" element={
+              <Suspense fallback={<PageLoader />}>
                 <ProtectedRoute>
                   <CRMDashboard />
                 </ProtectedRoute>
-              }
-            />
+              </Suspense>
+            } />
 
-            {/* CRM - Relatório Executivo (Protegido) */}
-            <Route
-              path="/crm/relatorio"
-              element={
+            <Route path="/crm/relatorio" element={
+              <Suspense fallback={<PageLoader />}>
                 <ProtectedRoute>
                   <ExecutiveReport />
                 </ProtectedRoute>
-              }
-            />
+              </Suspense>
+            } />
 
-            {/* Rota 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
