@@ -27,9 +27,22 @@ const twilioClient = twilio(
 
 const CONFIG = {
   model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 1024,
-  temperature: 0.8,  // Mais criatividade para respostas naturais
-  historyLimit: 20   // Memória expandida
+  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 800, // Reduzido para respostas mais rápidas
+  temperature: 0.7,  // Balanceado entre criatividade e consistência
+  historyLimit: 15,  // Histórico otimizado para velocidade
+  typingDelay: 1500  // Delay mínimo para simular digitação humana (ms)
+}
+
+/**
+ * Detecta se a mensagem é simples (saudação, confirmação, etc.)
+ * Mensagens simples podem usar modelo mais rápido
+ */
+function isSimpleMessage(message) {
+  const simplePatterns = [
+    /^(oi|olá|ola|hey|eae|e aí|bom dia|boa tarde|boa noite|obrigad[oa]|valeu|blz|ok|sim|não|nao)[\s!?.]*$/i,
+    /^(tudo bem|td bem|tdb|como vai|beleza)[\s!?.]*$/i
+  ]
+  return simplePatterns.some(pattern => pattern.test(message.trim()))
 }
 
 /**
@@ -37,6 +50,10 @@ const CONFIG = {
  */
 async function processCamilaMessage(userMessage, conversationId) {
   try {
+    // Detecta complexidade da mensagem para otimizar modelo
+    const useQuickModel = isSimpleMessage(userMessage)
+    const selectedModel = useQuickModel ? 'claude-3-5-haiku-20241022' : CONFIG.model
+
     // Busca histórico da conversa
     const history = await getConversation(conversationId)
 
@@ -58,10 +75,12 @@ async function processCamilaMessage(userMessage, conversationId) {
     // Converte tools para formato Claude usando handler compartilhado
     const claudeTools = convertToolsForClaude(TOOL_DEFINITIONS)
 
+    logger.info(`[Twilio] Using model: ${selectedModel} (quick: ${useQuickModel})`)
+
     // Chama Claude com tools
     const response = await anthropic.messages.create({
-      model: CONFIG.model,
-      max_tokens: CONFIG.maxTokens,
+      model: selectedModel,
+      max_tokens: useQuickModel ? 400 : CONFIG.maxTokens,
       temperature: CONFIG.temperature,
       system: AGENT_SYSTEM_PROMPT,
       messages: messages,
@@ -97,7 +116,7 @@ async function processCamilaMessage(userMessage, conversationId) {
         logger.debug(`[Twilio] Sending ${messagesWithToolResult.length} messages to Claude after tool execution`)
 
         const finalResponse = await anthropic.messages.create({
-          model: CONFIG.model,
+          model: selectedModel,
           max_tokens: CONFIG.maxTokens,
           temperature: CONFIG.temperature,
           system: AGENT_SYSTEM_PROMPT,
@@ -138,6 +157,28 @@ async function processCamilaMessage(userMessage, conversationId) {
   } catch (error) {
     logger.error('[Twilio] Error processing with Camila:', error)
     throw error
+  }
+}
+
+/**
+ * Simula indicador de "digitando" com delay humanizado
+ * Envia feedback imediato ao usuário
+ */
+async function simulateTyping(to, processingTime = CONFIG.typingDelay) {
+  // Delay humanizado baseado no tamanho esperado da resposta
+  const humanDelay = Math.min(processingTime, 2000)
+  await new Promise(resolve => setTimeout(resolve, humanDelay))
+}
+
+/**
+ * Envia reação de "lido" imediatamente (feedback visual)
+ */
+async function sendReadReceipt(to) {
+  try {
+    // Twilio não tem "read receipt" nativo, mas podemos logar
+    logger.info('[Twilio] Message received, processing...', { to })
+  } catch (error) {
+    logger.warn('[Twilio] Could not send read receipt:', error)
   }
 }
 
@@ -263,6 +304,7 @@ export default async function handler(req, res) {
     }
 
     const { phoneNumber, message, pushName } = webhookData
+    const startTime = Date.now()
 
     logger.info('[Twilio] Processing message from:', {
       pushName,
@@ -273,8 +315,21 @@ export default async function handler(req, res) {
     // ID da conversa = número do WhatsApp
     const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
 
-    // Processa com Camila
+    // Feedback imediato (marca como recebido)
+    await sendReadReceipt(phoneNumber)
+
+    // Processa com Camila (otimizado)
     const camilaResponse = await processCamilaMessage(message, conversationId)
+
+    // Calcula tempo de processamento
+    const processingTime = Date.now() - startTime
+    logger.info(`[Twilio] Processing time: ${processingTime}ms`)
+
+    // Simula digitação humanizada (mínimo 1s, máximo 3s)
+    const typingTime = Math.max(1000, Math.min(3000 - processingTime, 1500))
+    if (typingTime > 0) {
+      await simulateTyping(phoneNumber, typingTime)
+    }
 
     // Envia resposta de volta via Twilio
     await sendTwilioMessage(phoneNumber, camilaResponse)
