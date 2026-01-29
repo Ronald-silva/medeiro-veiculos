@@ -99,25 +99,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index.html'
-      },
-      output: {
-        manualChunks: {
-          'vendor-react': [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            'react-helmet-async'
-          ],
-          'vendor-supabase': [
-            '@supabase/supabase-js'
-          ],
-          'vendor-framer': [
-            'framer-motion'
-          ]
-        },
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
       }
     },
     terserOptions: {
