@@ -1,23 +1,7 @@
-# https://medeiro-veiculos.vercel.app/
+# https://medeirosveiculos.online
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://medeiro-veiculos.vercel.app/sitemap.xml
+Sitemap: https://medeirosveiculos.online/sitemap.xml
 
-# Cache Control
-Crawl-delay: 10
-
-# Disallow
-Disallow: /api/
-Disallow: /*.json$
-Disallow: /*?*
-
-# Allow
-Allow: /*.js$
-Allow: /*.css$
-Allow: /*.png$
-Allow: /*.jpg$
-Allow: /*.webp$
-Allow: /*.svg$
-Allow: /*.ico$ 
+Disallow: /api/ 
