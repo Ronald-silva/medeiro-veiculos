@@ -23,6 +23,7 @@ import { EXAMPLES } from './examples.js'
 import { CLOSING } from './closing.js'
 import { PSYCHOLOGY, OBJECTION_HANDLERS } from './psychology.js'
 import { PERSONALIZATION, getPersonaPrompt, getTemperaturePrompt } from './personalization.js'
+import { selectFewShotExamples, buildExamplesSection } from '../../lib/few-shot.js'
 
 // ============================================
 // PROMPT ESTATICO (compatibilidade)
@@ -293,12 +294,146 @@ export {
   PERSONALIZATION,
   getPersonaPrompt,
   getTemperaturePrompt,
-  formatContextForPrompt
+  formatContextForPrompt,
+  selectFewShotExamples,
+  buildExamplesSection
+}
+
+// ============================================
+// BUILDER COM FEW-SHOT LEARNING (CAMILA 2.0+)
+// ============================================
+
+/**
+ * Constroi prompt dinamico COM exemplos de conversas bem-sucedidas
+ * Usa Few-Shot Learning para melhorar respostas baseado em historico
+ *
+ * @param {Object} options - Opcoes de personalizacao
+ * @param {Object} options.context - Contexto da memoria
+ * @param {string} options.persona - Persona do cliente
+ * @param {string} options.temperature - Temperatura do lead
+ * @param {string} options.currentMessage - Mensagem atual (para buscar exemplos similares)
+ * @param {Array} options.recentMessages - Mensagens recentes da conversa
+ * @param {string} options.vehicleType - Tipo de veiculo de interesse
+ * @param {string} options.budgetRange - Faixa de orcamento
+ * @returns {Promise<string>} System prompt com exemplos dinamicos
+ */
+export async function buildDynamicPromptWithLearning(options = {}) {
+  const {
+    context = null,
+    persona = 'desconhecido',
+    temperature = 'morno',
+    currentMessage = '',
+    recentMessages = [],
+    vehicleType = null,
+    budgetRange = null,
+    currentDate = new Date().toLocaleDateString('pt-BR'),
+    currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  } = options;
+
+  // Busca exemplos similares de conversas bem-sucedidas
+  let dynamicExamples = '';
+  try {
+    const examples = await selectFewShotExamples({
+      currentMessage,
+      customerSegment: persona !== 'desconhecido' ? persona : null,
+      vehicleType,
+      budgetRange,
+      recentMessages
+    });
+
+    if (examples && examples.length > 0) {
+      dynamicExamples = buildExamplesSection(examples);
+    }
+  } catch (error) {
+    console.error('[Prompts] Erro ao buscar few-shot examples:', error);
+  }
+
+  const sections = [];
+
+  // 1. Identidade
+  sections.push(IDENTITY);
+
+  // 2. Data/hora e localizacao
+  sections.push(`📅 Data: ${currentDate} | 🕐 Hora: ${currentTime}`);
+  sections.push(STORE_LOCATION);
+
+  // 3. Contexto do cliente (se disponivel)
+  if (context) {
+    const contextText = formatContextForPrompt(context);
+    if (contextText) {
+      sections.push(`
+═══════════════════════════════════════════════
+🧠 MEMORIA DO CLIENTE
+═══════════════════════════════════════════════
+${contextText}`);
+    }
+  }
+
+  // 4. Personalizacao por persona
+  if (persona && persona !== 'desconhecido') {
+    sections.push(`
+═══════════════════════════════════════════════
+🎭 PERSONALIZACAO ATIVA
+═══════════════════════════════════════════════
+${getPersonaPrompt(persona)}`);
+  }
+
+  // 5. Personalizacao por temperatura
+  if (temperature) {
+    sections.push(getTemperaturePrompt(temperature));
+  }
+
+  // 6. Regras absolutas (CRITICO)
+  sections.push(`
+═══════════════════════════════════════════════
+🚨 REGRAS ABSOLUTAS
+═══════════════════════════════════════════════
+${RULES}`);
+
+  // 7. Inventario
+  sections.push(INVENTORY);
+
+  // 8. Tecnicas de vendas (resumidas)
+  sections.push(`
+═══════════════════════════════════════════════
+💼 TECNICAS DE VENDAS
+═══════════════════════════════════════════════
+${SPIN}
+
+---
+
+${BANT}`);
+
+  // 9. EXEMPLOS DINAMICOS (Few-Shot Learning)
+  if (dynamicExamples) {
+    sections.push(`
+═══════════════════════════════════════════════
+🎯 EXEMPLOS DE SUCESSO (Aprenda com conversas que converteram)
+═══════════════════════════════════════════════
+${dynamicExamples}`);
+  } else {
+    // Fallback para exemplos estaticos
+    sections.push(EXAMPLES);
+  }
+
+  // 10. Objecoes comuns
+  sections.push(`
+═══════════════════════════════════════════════
+🛡️ OBJECOES RAPIDAS
+═══════════════════════════════════════════════
+"Ta caro" → "Entendo! Qual valor voce tinha em mente?"
+"Vou pensar" → "Claro! O que voce quer pensar? Posso ajudar"
+"Preciso falar com marido/esposa" → "Perfeito! Traz junto. Qual dia bom?"
+"Nao tenho entrada" → "Tranquilo! Financia 100%. Quer simular?"
+"To so pesquisando" → "Otimo! O que voce ja viu? Te ajudo a comparar"`);
+
+  return sections.join('\n\n---\n\n');
 }
 
 export default {
   AGENT_SYSTEM_PROMPT,
   buildDynamicPrompt,
+  buildDynamicPromptWithLearning,
   buildCompactPrompt,
   getPersonaPrompt,
   getTemperaturePrompt
