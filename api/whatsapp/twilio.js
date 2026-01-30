@@ -39,10 +39,35 @@ const CONFIG = {
  */
 function isSimpleMessage(message) {
   const simplePatterns = [
-    /^(oi|olá|ola|hey|eae|e aí|bom dia|boa tarde|boa noite|obrigad[oa]|valeu|blz|ok|sim|não|nao)[\s!?.]*$/i,
+    /^(oi|olá|ola|hey|eae|e aí|bom dia|boa tarde|boa noite|blz|ok|sim|não|nao)[\s!?.]*$/i,
     /^(tudo bem|td bem|tdb|como vai|beleza)[\s!?.]*$/i
   ]
   return simplePatterns.some(pattern => pattern.test(message.trim()))
+}
+
+/**
+ * Detecta mensagens de encerramento/agradecimento
+ * Estas precisam de resposta contextual, não genérica
+ */
+function isClosingMessage(message) {
+  const closingPatterns = [
+    /^(obrigad[oa]|valeu|brigad[oa]|vlw|thanks|thank you)[\s!?.]*$/i,
+    /^(até|ate|tchau|flw|falou|abraço|abraco)[\s!?.]*$/i
+  ]
+  return closingPatterns.some(pattern => pattern.test(message.trim()))
+}
+
+/**
+ * Resposta padrão para mensagens de agradecimento
+ */
+function getClosingResponse() {
+  const responses = [
+    'Por nada! Qualquer dúvida, é só chamar 😊',
+    'Disponha! Estou aqui se precisar de algo mais 😊',
+    'Imagina! Fico feliz em ajudar. Até logo! 😊',
+    'De nada! Qualquer coisa, me chama aqui 😊'
+  ]
+  return responses[Math.floor(Math.random() * responses.length)]
 }
 
 /**
@@ -50,6 +75,12 @@ function isSimpleMessage(message) {
  */
 async function processCamilaMessage(userMessage, conversationId) {
   try {
+    // Detecta mensagem de encerramento - resposta rápida e contextual
+    if (isClosingMessage(userMessage)) {
+      logger.info('[Twilio] Closing message detected, using quick response')
+      return getClosingResponse()
+    }
+
     // Detecta complexidade da mensagem para otimizar modelo
     const useQuickModel = isSimpleMessage(userMessage)
     const selectedModel = useQuickModel ? 'claude-3-5-haiku-20241022' : CONFIG.model
@@ -125,7 +156,7 @@ async function processCamilaMessage(userMessage, conversationId) {
         })
 
         const textBlock = finalResponse.content.find(block => block.type === 'text')
-        assistantMessage = textBlock?.text || 'Me conta mais sobre o que você procura!'
+        assistantMessage = textBlock?.text || 'Como posso te ajudar? 😊'
         toolCalled = toolUses.map(t => t.name).join(', ')
       }
     } else {
@@ -325,10 +356,16 @@ export default async function handler(req, res) {
     const processingTime = Date.now() - startTime
     logger.info(`[Twilio] Processing time: ${processingTime}ms`)
 
-    // Simula digitação humanizada (mínimo 1s, máximo 3s)
-    const typingTime = Math.max(1000, Math.min(3000 - processingTime, 1500))
-    if (typingTime > 0) {
-      await simulateTyping(phoneNumber, typingTime)
+    // Simula tempo de digitação humanizado baseado no tamanho da resposta
+    // Humanos digitam ~40 palavras/minuto = ~200 chars/minuto = ~3.3 chars/segundo
+    const responseLength = camilaResponse.length
+    const estimatedTypingTime = Math.min(responseLength * 30, 4000) // ~30ms por char, max 4s
+    const totalDesiredTime = Math.max(2000, estimatedTypingTime) // Mínimo 2s para parecer natural
+    const remainingDelay = Math.max(0, totalDesiredTime - processingTime)
+
+    if (remainingDelay > 0) {
+      logger.info(`[Twilio] Adding ${remainingDelay}ms delay to simulate typing`)
+      await simulateTyping(phoneNumber, remainingDelay)
     }
 
     // Envia resposta de volta via Twilio
