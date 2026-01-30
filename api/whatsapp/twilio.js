@@ -72,8 +72,13 @@ function getClosingResponse() {
 
 /**
  * Processa mensagem com a Camila
+ * @param {string} userMessage - Mensagem do usuário
+ * @param {string} conversationId - ID da conversa
+ * @param {Object} clientInfo - Informações do cliente (opcional)
+ * @param {string} clientInfo.phone - Telefone do cliente
+ * @param {string} clientInfo.name - Nome do cliente
  */
-async function processCamilaMessage(userMessage, conversationId) {
+async function processCamilaMessage(userMessage, conversationId, clientInfo = {}) {
   try {
     // Detecta mensagem de encerramento - resposta rápida e contextual
     if (isClosingMessage(userMessage)) {
@@ -91,10 +96,15 @@ async function processCamilaMessage(userMessage, conversationId) {
     // Adiciona data/horário de Fortaleza usando utilidade compartilhada
     const dateTimeContext = getDateTimeContext()
 
+    // Contexto do cliente (para tools como schedule_visit)
+    const clientContext = clientInfo.phone
+      ? `\n[WhatsApp do cliente: ${clientInfo.phone}]${clientInfo.name ? ` [Nome: ${clientInfo.name}]` : ''}`
+      : ''
+
     // Monta mensagens para Claude (remove timestamp que não é aceito pela API)
     const messages = [
       ...history.map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: userMessage + `\n${dateTimeContext}` }
+      { role: 'user', content: userMessage + `\n${dateTimeContext}${clientContext}` }
     ]
 
     logger.info('[Twilio] Processing with Camila:', {
@@ -349,8 +359,11 @@ export default async function handler(req, res) {
     // Feedback imediato (marca como recebido)
     await sendReadReceipt(phoneNumber)
 
-    // Processa com Camila (otimizado)
-    const camilaResponse = await processCamilaMessage(message, conversationId)
+    // Processa com Camila (otimizado) - passa telefone e nome do cliente
+    const camilaResponse = await processCamilaMessage(message, conversationId, {
+      phone: phoneNumber,
+      name: pushName
+    })
 
     // Calcula tempo de processamento
     const processingTime = Date.now() - startTime
