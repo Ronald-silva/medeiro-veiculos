@@ -5,7 +5,7 @@
 // ============================================
 
 import { TOOL_DEFINITIONS } from '../../src/constants/agentPrompts.js'
-import { buildDynamicPrompt, AGENT_SYSTEM_PROMPT } from '../../src/agent/prompts/index.js'
+import { buildDynamicPromptWithLearning, AGENT_SYSTEM_PROMPT } from '../../src/agent/prompts/index.js'
 import Anthropic from '@anthropic-ai/sdk'
 import logger from '../../src/lib/logger.js'
 
@@ -79,12 +79,16 @@ async function processCamilaMessage(userMessage, conversationId, whatsappNumber,
     const persona = customerProfile?.profile?.persona || customerProfile?.persona || 'desconhecido'
     const temperature = customerProfile?.temperature || 'morno'
 
-    // Constroi prompt dinamico personalizado
+    // Constroi prompt dinamico com sistema de aprendizado (Few-Shot Learning)
     const systemPrompt = CONFIG.useDynamicPrompt
-      ? buildDynamicPrompt({
+      ? await buildDynamicPromptWithLearning({
           context,
           persona,
           temperature,
+          currentMessage: userMessage,
+          recentMessages: context.recentMessages || [],
+          vehicleType: customerProfile?.vehicleInterest || null,
+          budgetRange: customerProfile?.budgetRange || null,
           currentDate: new Date().toLocaleDateString('pt-BR'),
           currentTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
         })

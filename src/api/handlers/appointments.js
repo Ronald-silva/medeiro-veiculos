@@ -7,6 +7,8 @@
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
 import { convertBrazilianDateToISO } from '../utils/dateTime.js';
 import { trackFunnelEvent } from '../../lib/analytics.js';
+import { markConversationAsAppointment } from '../../lib/conversationHistory.js';
+import { processSuccessfulConversation, saveSuccessfulConversation } from '../../lib/embeddings.js';
 import logger from '../../lib/logger.js';
 
 /**
@@ -301,6 +303,49 @@ export async function scheduleVisit(params) {
         visitType: appointmentData.visit_type,
         scheduledDate: appointmentData.scheduled_date
       });
+
+      // 7. LEARNING SYSTEM: Marca conversa como sucesso e salva para aprendizado
+      try {
+        // Busca conversa ativa do lead
+        const { data: conversation } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('lead_id', leadId)
+          .eq('status', 'ativa')
+          .order('last_message_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (conversation) {
+          // Marca conversa como tendo resultado em agendamento
+          await markConversationAsAppointment(conversation.id, dbResult.appointmentId);
+
+          // Busca mensagens da conversa para salvar como exemplo de sucesso
+          const { data: messages } = await supabase
+            .from('messages')
+            .select('role, content, created_at')
+            .eq('conversation_id', conversation.id)
+            .order('created_at', { ascending: true });
+
+          if (messages && messages.length > 0) {
+            // Processa e salva conversa bem-sucedida para Few-Shot Learning
+            const processedConversation = await processSuccessfulConversation(messages, {
+              leadId,
+              customerSegment: lead?.profile?.persona || 'desconhecido',
+              vehicleType: params.vehicleInterest || null,
+              budgetRange: lead?.profile?.budgetRange || null,
+              conversionType: 'appointment',
+              totalMessages: messages.length
+            });
+
+            await saveSuccessfulConversation(processedConversation);
+            logger.info('[Learning] Conversa salva para Few-Shot Learning:', { conversationId: conversation.id });
+          }
+        }
+      } catch (learningError) {
+        // Não falha o agendamento se o learning falhar
+        logger.warn('[Learning] Erro ao salvar conversa para aprendizado:', learningError.message);
+      }
 
       // Formata data para exibição
       const displayDate = params.preferredDate || 'em breve';
