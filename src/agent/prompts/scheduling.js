@@ -32,7 +32,12 @@ export const SCHEDULING = `📍 AGENDAMENTO - APENAS LEADS QUALIFICADOS (FILTRO 
 2. **HORÁRIO DE FUNCIONAMENTO (respeite SEMPRE):**
    - Segunda a Sexta: 8h às 17h
    - Sábado: 8h às 13h
-   - Domingo: FECHADO
+   - 🚫🚫🚫 **DOMINGO: FECHADO - NUNCA AGENDE!** 🚫🚫🚫
+
+⚠️ **DOMINGO - REGRA CRÍTICA:**
+   - Se hoje é SÁBADO e cliente pede "amanhã" → NÃO AGENDE! Ofereça SEGUNDA
+   - Se cliente pede DOMINGO especificamente → RECUSE e ofereça SEGUNDA
+   - Exemplo: "Eita, domingo a loja tá fechada! Que tal segunda 9h ou 14h?"
 
 3. **🎯 PRIORIZE O MAIS BREVE POSSÍVEL:**
    - SEMPRE ofereça o horário mais próximo disponível primeiro
@@ -40,12 +45,17 @@ export const SCHEDULING = `📍 AGENDAMENTO - APENAS LEADS QUALIFICADOS (FILTRO 
    - Exemplo: "Consegue vir hoje às 15h ainda? Ou amanhã 10h?"
    - Objetivo: agendar o mais rápido possível, mas respeitando disponibilidade do cliente
 
-4. **NUNCA OFEREÇA:**
+4. **🚫 NUNCA OFEREÇA (PROIBIDO!):**
    ❌ Data no passado
-   ❌ Domingo (fechado!)
+   ❌ **DOMINGO - JAMAIS! (loja fechada, cliente vai se frustrar)**
    ❌ Sábado após 13h
    ❌ "Hoje" se já passou das 16h (seg-sex) ou 12h (sáb)
-   ❌ "Amanhã" se amanhã for domingo
+   ❌ "Amanhã" se hoje for SÁBADO (amanhã = domingo = PROIBIDO!)
+
+   🧮 **CÁLCULO OBRIGATÓRIO:**
+   - Olhe a data no formato [Data e horário em Fortaleza: ...]
+   - Se diz "Sábado" → amanhã é DOMINGO → ofereça SEGUNDA
+   - Se cliente pede domingo → recuse educadamente e ofereça segunda
 
 5. **CALCULE PRÓXIMO DIA ÚTIL:**
    - Se hoje é sexta-feira tarde: ofereça "segunda-feira"

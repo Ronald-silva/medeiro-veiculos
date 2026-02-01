@@ -10,10 +10,61 @@ import { trackFunnelEvent } from '../../lib/analytics.js';
 import logger from '../../lib/logger.js';
 
 /**
+ * Verifica se uma data cai em domingo
+ * @param {string} dateStr - Data no formato DD/MM/YYYY ou texto como "domingo", "amanha"
+ * @returns {boolean} true se for domingo
+ */
+function isSunday(dateStr) {
+  if (!dateStr) return false;
+
+  const lowerDate = dateStr.toLowerCase().trim();
+
+  // Verifica se menciona domingo explicitamente
+  if (lowerDate.includes('domingo')) {
+    return true;
+  }
+
+  // Se for "amanhã" ou "amanha", calcula se amanhã é domingo
+  if (lowerDate === 'amanhã' || lowerDate === 'amanha') {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.getDay() === 0; // 0 = domingo
+  }
+
+  // Tenta parsear data no formato DD/MM/YYYY
+  const match = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (match) {
+    const [, day, month, year] = match;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.getDay() === 0;
+  }
+
+  return false;
+}
+
+/**
+ * Calcula a próxima segunda-feira
+ * @returns {string} Data formatada DD/MM/YYYY
+ */
+function getNextMonday() {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+  const nextMonday = new Date(today);
+  nextMonday.setDate(today.getDate() + daysUntilMonday);
+
+  const day = String(nextMonday.getDate()).padStart(2, '0');
+  const month = String(nextMonday.getMonth() + 1).padStart(2, '0');
+  const year = nextMonday.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
+/**
  * Valida parâmetros obrigatórios do agendamento
  */
 function validateAppointmentParams(params) {
-  const { customerName, phone } = params;
+  const { customerName, phone, preferredDate } = params;
 
   if (!customerName || !phone) {
     logger.error('Missing required appointment params:', { customerName, phone });
@@ -21,6 +72,18 @@ function validateAppointmentParams(params) {
       valid: false,
       error: 'Nome e telefone são obrigatórios',
       message: 'Preciso do seu nome completo e WhatsApp para confirmar o agendamento. Pode me passar?'
+    };
+  }
+
+  // 🚫 VALIDAÇÃO CRÍTICA: Rejeita agendamentos em domingo
+  if (isSunday(preferredDate)) {
+    const nextMonday = getNextMonday();
+    logger.warn('Tentativa de agendamento em domingo rejeitada:', { preferredDate });
+    return {
+      valid: false,
+      error: 'Domingo não funciona',
+      message: `Eita, domingo a loja tá fechada! 😅 Que tal segunda-feira (${nextMonday})? Posso agendar 9h ou 14h pra você!`,
+      suggestedDate: nextMonday
     };
   }
 
