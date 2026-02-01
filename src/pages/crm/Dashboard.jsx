@@ -8,7 +8,7 @@ import {
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
-import { getSales, getLeads, getDashboardMetrics, getAppointments, updateAppointmentStatus, deleteAppointment } from '../../lib/supabase'
+import { getSales, getLeads, getDashboardMetrics, getAppointments, updateAppointmentStatus, deleteAppointment, getCamilaMetrics } from '../../lib/supabase'
 import SalesModal from '../../components/crm/SalesModal'
 import LeadsTable from '../../components/crm/LeadsTable'
 import MetricsCards from '../../components/crm/dashboard/MetricsCards'
@@ -22,6 +22,7 @@ export default function CRMDashboard() {
   const [leads, setLeads] = useState([])
   const [appointments, setAppointments] = useState([])
   const [metrics, setMetrics] = useState(null)
+  const [camilaStats, setCamilaStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showSalesModal, setShowSalesModal] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard') // dashboard, sales, leads, appointments
@@ -31,16 +32,18 @@ export default function CRMDashboard() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [salesData, leadsData, appointmentsData, metricsData] = await Promise.all([
+      const [salesData, leadsData, appointmentsData, metricsData, camilaData] = await Promise.all([
         getSales(),
         getLeads(),
         getAppointments(),
-        getDashboardMetrics().catch(() => null) // Pode não ter a view ainda
+        getDashboardMetrics().catch(() => null), // Pode não ter a view ainda
+        getCamilaMetrics(7).catch(() => null) // Métricas da Camila (últimos 7 dias)
       ])
       setSales(salesData || [])
       setLeads(leadsData || [])
       setAppointments(appointmentsData || [])
       setMetrics(metricsData)
+      setCamilaStats(camilaData)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
     } finally {
@@ -208,7 +211,7 @@ export default function CRMDashboard() {
             {/* DASHBOARD TAB */}
             {activeTab === 'dashboard' && (
               <>
-                <MetricsCards stats={stats} sales={sales} leads={leads} />
+                <MetricsCards stats={stats} sales={sales} leads={leads} camilaStats={camilaStats} />
                 {/* Ação Rápida */}
                 <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-6 sm:mb-8">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

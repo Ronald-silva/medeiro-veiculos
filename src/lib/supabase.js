@@ -195,3 +195,65 @@ export async function deleteAppointment(appointmentId) {
   if (error) throw error
   return true
 }
+
+// MÉTRICAS DA CAMILA (Conversas WhatsApp)
+export async function getCamilaMetrics(days = 7) {
+  try {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+    const startDateISO = startDate.toISOString()
+
+    // Busca conversas do período
+    const { data: conversations, error: convError } = await supabase
+      .from('conversations')
+      .select('id, resulted_in_appointment, messages_count, started_at, last_message_at')
+      .not('whatsapp', 'is', null)
+      .gte('started_at', startDateISO)
+
+    if (convError) throw convError
+
+    // Busca mensagens para calcular tempo médio de resposta
+    const { data: messages, error: msgError } = await supabase
+      .from('messages')
+      .select('role, response_time_ms, created_at')
+      .gte('created_at', startDateISO)
+      .not('response_time_ms', 'is', null)
+      .eq('role', 'assistant')
+
+    if (msgError) throw msgError
+
+    // Calcula métricas
+    const totalConversas = conversations?.length || 0
+    const conversasComAgendamento = conversations?.filter(c => c.resulted_in_appointment)?.length || 0
+    const taxaConversao = totalConversas > 0 ? (conversasComAgendamento / totalConversas) * 100 : 0
+
+    // Tempo médio de resposta
+    const temposResposta = messages?.map(m => m.response_time_ms).filter(t => t > 0) || []
+    const tempoMedioMs = temposResposta.length > 0
+      ? temposResposta.reduce((a, b) => a + b, 0) / temposResposta.length
+      : 0
+    const tempoMedioSegundos = Math.round(tempoMedioMs / 1000)
+
+    // Total de mensagens
+    const totalMensagens = conversations?.reduce((sum, c) => sum + (c.messages_count || 0), 0) || 0
+
+    return {
+      totalConversas,
+      conversasComAgendamento,
+      taxaConversao: Math.round(taxaConversao * 10) / 10,
+      tempoMedioResposta: tempoMedioSegundos,
+      totalMensagens,
+      periodo: days
+    }
+  } catch (error) {
+    console.error('Erro ao buscar métricas da Camila:', error)
+    return {
+      totalConversas: 0,
+      conversasComAgendamento: 0,
+      taxaConversao: 0,
+      tempoMedioResposta: 0,
+      totalMensagens: 0,
+      periodo: days
+    }
+  }
+}

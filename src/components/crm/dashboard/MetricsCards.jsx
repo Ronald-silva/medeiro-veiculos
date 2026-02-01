@@ -4,11 +4,13 @@ import {
   UserGroupIcon,
   BanknotesIcon,
   ArrowTrendingUpIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChatBubbleLeftRightIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import { formatCurrency } from '../../../utils/calculations'
 
-export default function MetricsCards({ stats = {}, sales = [], leads = [] }) {
+export default function MetricsCards({ stats = {}, sales = [], leads = [], camilaStats = null }) {
   // Garante valores seguros usando nullish coalescing
   const safeStats = {
     medeirosRecebe: stats.medeirosRecebe ?? stats.medeiros_recebe ?? 0,
@@ -319,6 +321,68 @@ export default function MetricsCards({ stats = {}, sales = [], leads = [] }) {
           <div className="bg-gray-200 flex-1" />
         </div>
       </div>
+
+      {/* ROW 4: Performance da Camila (IA) */}
+      {camilaStats && (
+        <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg p-4 sm:p-6 text-white mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ChatBubbleLeftRightIcon className="w-6 h-6" />
+            <h3 className="text-sm font-semibold">Performance da Camila (IA)</h3>
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full ml-auto">
+              Últimos {camilaStats.periodo || 7} dias
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Total de Conversas */}
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-2xl sm:text-3xl font-bold">{camilaStats.totalConversas || 0}</p>
+              <p className="text-xs text-amber-100 mt-1">Conversas</p>
+            </div>
+
+            {/* Agendamentos */}
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-2xl sm:text-3xl font-bold">{camilaStats.conversasComAgendamento || 0}</p>
+              <p className="text-xs text-amber-100 mt-1">Agendamentos</p>
+            </div>
+
+            {/* Taxa de Conversão */}
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-2xl sm:text-3xl font-bold">{camilaStats.taxaConversao || 0}%</p>
+              <p className="text-xs text-amber-100 mt-1">Conversão</p>
+              <div className="mt-2 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-full transition-all"
+                  style={{ width: `${Math.min(camilaStats.taxaConversao || 0, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Tempo Médio de Resposta */}
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-1">
+                <ClockIcon className="w-5 h-5" />
+                <p className="text-2xl sm:text-3xl font-bold">
+                  {camilaStats.tempoMedioResposta
+                    ? `${(camilaStats.tempoMedioResposta / 1000).toFixed(1)}s`
+                    : '-'}
+                </p>
+              </div>
+              <p className="text-xs text-amber-100 mt-1">Tempo Resposta</p>
+            </div>
+          </div>
+
+          {/* Mensagens totais */}
+          <div className="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-sm">
+            <span className="text-amber-100">
+              Total de mensagens processadas
+            </span>
+            <span className="font-semibold">
+              {camilaStats.totalMensagens || 0} msgs
+            </span>
+          </div>
+        </div>
+      )}
     </>
   )
 }
