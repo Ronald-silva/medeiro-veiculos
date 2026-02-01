@@ -14,6 +14,13 @@ import {
 // Importa utilidades
 import { getDateTimeContext } from '../../src/api/utils/index.js'
 
+// Importa sistema de histórico de conversas
+import {
+  getOrCreateConversation,
+  saveMessage,
+  markConversationAsAppointment
+} from '../../src/lib/conversationHistory.js'
+
 // Cliente Anthropic
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -175,7 +182,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
       assistantMessage = textBlock?.text || response.content[0].text
     }
 
-    // Salva no histórico (memória expandida para contexto melhor)
+    // Salva no histórico Redis (memória de curto prazo)
     const updatedHistory = [
       ...history,
       { role: 'user', content: userMessage, timestamp: new Date().toISOString() },
@@ -183,6 +190,33 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
     ]
 
     await saveConversation(conversationId, updatedHistory.slice(-CONFIG.historyLimit), 86400)
+
+    // === PERSISTÊNCIA NO SUPABASE (histórico permanente) ===
+    const processingEndTime = Date.now()
+    const responseTimeMs = processingEndTime - (clientInfo._startTime || processingEndTime)
+
+    // Busca ou cria conversa no Supabase
+    const dbConversationId = await getOrCreateConversation(clientInfo.phone)
+
+    if (dbConversationId) {
+      // Salva mensagem do usuário
+      await saveMessage({
+        conversationId: dbConversationId,
+        role: 'user',
+        content: userMessage
+      })
+
+      // Salva resposta da Camila
+      await saveMessage({
+        conversationId: dbConversationId,
+        role: 'assistant',
+        content: assistantMessage,
+        responseTimeMs,
+        toolName: toolCalled || null
+      })
+
+      logger.debug('[Twilio] Messages persisted to Supabase:', { dbConversationId })
+    }
 
     if (toolCalled) {
       logger.info(`[Twilio] Camila response with tool: ${toolCalled}`, {
@@ -359,10 +393,11 @@ export default async function handler(req, res) {
     // Feedback imediato (marca como recebido)
     await sendReadReceipt(phoneNumber)
 
-    // Processa com Camila (otimizado) - passa telefone e nome do cliente
+    // Processa com Camila (otimizado) - passa telefone, nome e timestamp
     const camilaResponse = await processCamilaMessage(message, conversationId, {
       phone: phoneNumber,
-      name: pushName
+      name: pushName,
+      _startTime: startTime
     })
 
     // Calcula tempo de processamento

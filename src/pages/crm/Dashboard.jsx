@@ -5,7 +5,8 @@ import {
   ArrowRightOnRectangleIcon,
   PlusIcon,
   DocumentChartBarIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 import { getSales, getLeads, getDashboardMetrics, getAppointments, updateAppointmentStatus, deleteAppointment } from '../../lib/supabase'
 import SalesModal from '../../components/crm/SalesModal'
@@ -13,6 +14,7 @@ import LeadsTable from '../../components/crm/LeadsTable'
 import MetricsCards from '../../components/crm/dashboard/MetricsCards'
 import SalesTable from '../../components/crm/dashboard/SalesTable'
 import AppointmentsTable from '../../components/crm/dashboard/AppointmentsTable'
+import ConversationsPanel from '../../components/crm/dashboard/ConversationsPanel'
 export default function CRMDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -179,6 +181,19 @@ export default function CRMDashboard() {
             >
               Agendamentos ({appointments.length})
             </button>
+            <button
+              onClick={() => setActiveTab('conversations')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'conversations'
+                  ? 'border-amber-500 text-amber-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                Conversas
+              </span>
+            </button>
           </nav>
         </div>
       </div>
@@ -288,6 +303,11 @@ export default function CRMDashboard() {
                   onDelete={handleDeleteAppointment}
                 />
               </div>
+            )}
+
+            {/* CONVERSATIONS TAB */}
+            {activeTab === 'conversations' && (
+              <ConversationsPanel />
             )}
           </>
         )}
