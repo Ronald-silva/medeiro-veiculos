@@ -5,12 +5,16 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { validateEnv } from '../src/config/env.js';
+import { initSentry, captureException } from '../src/lib/sentry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Carrega variáveis de ambiente
 dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
+
+// Inicializa Sentry ANTES de qualquer outra coisa (captura erros de inicialização)
+initSentry();
 
 // Valida variáveis de ambiente ANTES de iniciar o servidor
 const envValidation = validateEnv();
@@ -86,6 +90,7 @@ app.post('/api/chat/route', async (req, res) => {
     res.status(response.status).json(data);
   } catch (error) {
     console.error('❌ Error in chat route:', error);
+    captureException(error, { service: 'chat-route' });
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,
@@ -105,6 +110,7 @@ app.post('/api/whatsapp/process', async (req, res) => {
     await whatsappHandler(req, res);
   } catch (error) {
     console.error('❌ Error in WhatsApp route:', error);
+    captureException(error, { service: 'whatsapp-evolution' });
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,
@@ -124,6 +130,7 @@ app.post('/api/whatsapp/twilio', async (req, res) => {
     await twilioHandler(req, res);
   } catch (error) {
     console.error('❌ Error in Twilio route:', error);
+    captureException(error, { service: 'whatsapp-twilio' });
     res.status(200).send('OK'); // Twilio espera 200 mesmo com erro
   }
 });
@@ -133,21 +140,88 @@ app.get(/^(?!\/api)/, (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
-// Health check
-app.get('/api/health', (_req, res) => {
+// Health check - verifica status real dos serviços
+app.get('/api/health', async (_req, res) => {
+  const startTime = Date.now();
+  const checks = {};
+  let overallStatus = 'healthy';
+
+  // 1. Verifica variáveis de ambiente
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-');
   const hasOpenAI = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your-');
+  const hasSupabase = !!process.env.VITE_SUPABASE_URL && !!process.env.VITE_SUPABASE_ANON_KEY;
+  const hasUpstash = !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
 
-  res.json({
-    status: 'ok',
-    service: 'medeiros-veiculos-api',
-    aiProvider: hasAnthropic ? 'claude-3.5-sonnet' : (hasOpenAI ? 'gpt-4o' : 'none'),
-    timestamp: new Date().toISOString(),
-    env: {
-      anthropic: hasAnthropic,
-      openai: hasOpenAI,
-      supabase: !!process.env.VITE_SUPABASE_URL
+  checks.config = {
+    status: hasAnthropic || hasOpenAI ? 'ok' : 'warning',
+    anthropic: hasAnthropic,
+    openai: hasOpenAI,
+    supabase: hasSupabase,
+    upstash: hasUpstash
+  };
+
+  // 2. Verifica Redis/Upstash (se configurado)
+  if (hasUpstash) {
+    try {
+      const { isUpstashConfigured, redis } = await import('../src/lib/upstash.js');
+      if (isUpstashConfigured() && redis) {
+        await redis.ping();
+        checks.redis = { status: 'ok', latency: Date.now() - startTime };
+      } else {
+        checks.redis = { status: 'not_configured' };
+      }
+    } catch (error) {
+      checks.redis = { status: 'error', message: error.message };
+      overallStatus = 'degraded';
     }
+  } else {
+    checks.redis = { status: 'not_configured' };
+  }
+
+  // 3. Verifica Circuit Breakers
+  try {
+    const { getCircuitsStatus } = await import('../src/lib/circuit-breaker.js');
+    const circuitStatus = getCircuitsStatus();
+    const openCircuits = Object.entries(circuitStatus).filter(([_, c]) => c.state === 'OPEN');
+
+    checks.circuits = {
+      status: openCircuits.length > 0 ? 'warning' : 'ok',
+      total: Object.keys(circuitStatus).length,
+      open: openCircuits.length,
+      details: circuitStatus
+    };
+
+    if (openCircuits.length > 0) {
+      overallStatus = overallStatus === 'healthy' ? 'degraded' : overallStatus;
+    }
+  } catch {
+    checks.circuits = { status: 'ok', total: 0 };
+  }
+
+  // 4. Verifica memória
+  const memUsage = process.memoryUsage();
+  const memMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+  checks.memory = {
+    status: memMB < 450 ? 'ok' : 'warning',
+    heapUsedMB: memMB,
+    heapTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024)
+  };
+
+  // 5. Uptime
+  checks.uptime = {
+    status: 'ok',
+    seconds: Math.floor(process.uptime())
+  };
+
+  const responseTime = Date.now() - startTime;
+
+  res.status(overallStatus === 'healthy' ? 200 : 503).json({
+    status: overallStatus,
+    service: 'medeiros-veiculos-api',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    responseTimeMs: responseTime,
+    checks
   });
 });
 

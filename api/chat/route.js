@@ -4,6 +4,8 @@ import OpenAI from 'openai'
 import { isSupabaseConfigured } from '../../src/lib/supabaseClient.js'
 import { AGENT_SYSTEM_PROMPT, TOOL_DEFINITIONS } from '../../src/constants/agentPrompts.js'
 import { saveConversation, getConversation, checkRateLimit, isUpstashConfigured } from '../../src/lib/upstash.js'
+import { withCircuitBreaker } from '../../src/lib/circuit-breaker.js'
+import { captureException } from '../../src/lib/sentry.js'
 import logger from '../../src/lib/logger.js'
 
 // Importa handlers compartilhados
@@ -112,18 +114,20 @@ async function chatWithClaude(messages, convId) {
   logger.debug(`Sending ${cleanMessages.length} messages to Claude`)
 
   // Claude precisa do system message separado
-  // Timeout de 25s (margem antes do limite de 30s do Vercel FREE no plano pago, ou para desenvolvimento local)
-  const response = await withTimeout(
-    anthropic.messages.create({
-      model: CONFIG.anthropic.model,
-      max_tokens: CONFIG.anthropic.maxTokens,
-      temperature: CONFIG.anthropic.temperature,
-      system: AGENT_SYSTEM_PROMPT,
-      messages: cleanMessages,
-      tools: claudeTools
-    }),
-    25000
-  )
+  // Circuit Breaker protege contra falhas consecutivas da API
+  const response = await withCircuitBreaker('claude-api', async () => {
+    return await withTimeout(
+      anthropic.messages.create({
+        model: CONFIG.anthropic.model,
+        max_tokens: CONFIG.anthropic.maxTokens,
+        temperature: CONFIG.anthropic.temperature,
+        system: AGENT_SYSTEM_PROMPT,
+        messages: cleanMessages,
+        tools: claudeTools
+      }),
+      25000
+    )
+  }, { failureThreshold: 3, resetTimeout: 30000 })
 
   // Se Claude quis usar tool(s)
   if (response.stop_reason === 'tool_use') {
@@ -160,17 +164,19 @@ async function chatWithClaude(messages, convId) {
       logger.debug(`Sending ${messagesWithToolResult.length} messages to Claude after tool execution`)
       logger.debug(`Processed ${toolResults.length} tool results`)
 
-      const finalResponse = await withTimeout(
-        anthropic.messages.create({
-          model: CONFIG.anthropic.model,
-          max_tokens: CONFIG.anthropic.maxTokens,
-          temperature: CONFIG.anthropic.temperature,
-          system: AGENT_SYSTEM_PROMPT,
-          messages: messagesWithToolResult,
-          tools: claudeTools
-        }),
-        25000
-      )
+      const finalResponse = await withCircuitBreaker('claude-api', async () => {
+        return await withTimeout(
+          anthropic.messages.create({
+            model: CONFIG.anthropic.model,
+            max_tokens: CONFIG.anthropic.maxTokens,
+            temperature: CONFIG.anthropic.temperature,
+            system: AGENT_SYSTEM_PROMPT,
+            messages: messagesWithToolResult,
+            tools: claudeTools
+          }),
+          25000
+        )
+      }, { failureThreshold: 3, resetTimeout: 30000 })
 
       const textBlock = finalResponse.content.find(block => block.type === 'text')
       const responseMessage = textBlock?.text || 'Desculpe, não entendi.'
@@ -194,17 +200,19 @@ async function chatWithClaude(messages, convId) {
 
 // Chat usando OpenAI (fallback)
 async function chatWithOpenAI(messages, convId) {
-  const completion = await openai.chat.completions.create({
-    model: CONFIG.openai.model,
-    messages: [
-      { role: 'system', content: AGENT_SYSTEM_PROMPT },
-      ...messages.map(h => ({ role: h.role, content: h.content }))
-    ],
-    tools: TOOL_DEFINITIONS,
-    tool_choice: 'auto',
-    temperature: CONFIG.openai.temperature,
-    max_tokens: CONFIG.openai.maxTokens
-  })
+  const completion = await withCircuitBreaker('openai-api', async () => {
+    return await openai.chat.completions.create({
+      model: CONFIG.openai.model,
+      messages: [
+        { role: 'system', content: AGENT_SYSTEM_PROMPT },
+        ...messages.map(h => ({ role: h.role, content: h.content }))
+      ],
+      tools: TOOL_DEFINITIONS,
+      tool_choice: 'auto',
+      temperature: CONFIG.openai.temperature,
+      max_tokens: CONFIG.openai.maxTokens
+    })
+  }, { failureThreshold: 3, resetTimeout: 30000 })
 
   const responseMessage = completion.choices[0].message
 
@@ -223,14 +231,16 @@ async function chatWithOpenAI(messages, convId) {
       ...toolResults // Inclui os tool results
     ]
 
-    const finalCompletion = await openai.chat.completions.create({
-      model: CONFIG.openai.model,
-      messages: messagesWithToolResult,
-      tools: TOOL_DEFINITIONS,
-      tool_choice: 'auto',
-      temperature: CONFIG.openai.temperature,
-      max_tokens: CONFIG.openai.maxTokens
-    })
+    const finalCompletion = await withCircuitBreaker('openai-api', async () => {
+      return await openai.chat.completions.create({
+        model: CONFIG.openai.model,
+        messages: messagesWithToolResult,
+        tools: TOOL_DEFINITIONS,
+        tool_choice: 'auto',
+        temperature: CONFIG.openai.temperature,
+        max_tokens: CONFIG.openai.maxTokens
+      })
+    }, { failureThreshold: 3, resetTimeout: 30000 })
 
     return {
       message: finalCompletion.choices[0].message.content,
@@ -342,6 +352,19 @@ export async function POST(request) {
 
   } catch (error) {
     logger.error('Error in chat API:', error)
+    captureException(error, { service: 'chat-api' })
+
+    // Circuit Breaker aberto - API instável
+    if (error.code === 'CIRCUIT_OPEN') {
+      return new Response(
+        JSON.stringify({
+          error: 'Serviço temporariamente indisponível',
+          message: 'Nosso sistema está se recuperando. Tente novamente em alguns segundos.',
+          retryAfter: error.retryAfter || 30
+        }),
+        { status: 503, headers: { 'Content-Type': 'application/json', 'Retry-After': String(error.retryAfter || 30) } }
+      )
+    }
 
     return new Response(
       JSON.stringify({
