@@ -59,6 +59,14 @@ async function loadTwilioHandler() {
   console.log('✅ WhatsApp Twilio handler loaded');
 }
 
+// Importa dinamicamente o handler de conversas
+let conversationsHandler;
+async function loadConversationsHandler() {
+  const module = await import('../api/conversations/route.js');
+  conversationsHandler = module.default;
+  console.log('✅ Conversations handler loaded');
+}
+
 // Rota de chat
 app.post('/api/chat/route', async (req, res) => {
   try {
@@ -132,6 +140,23 @@ app.post('/api/whatsapp/twilio', async (req, res) => {
     console.error('❌ Error in Twilio route:', error);
     captureException(error, { service: 'whatsapp-twilio' });
     res.status(200).send('OK'); // Twilio espera 200 mesmo com erro
+  }
+});
+
+// Rota de conversas (GET para listar conversas e mensagens)
+app.get('/api/conversations', async (req, res) => {
+  try {
+    if (!conversationsHandler) {
+      await loadConversationsHandler();
+    }
+    await conversationsHandler(req, res);
+  } catch (error) {
+    console.error('❌ Error in conversations route:', error);
+    captureException(error, { service: 'conversations' });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
   }
 });
 
@@ -231,6 +256,7 @@ app.get('/api/health', async (_req, res) => {
     await loadChatHandler();
     await loadWhatsAppHandler();
     await loadTwilioHandler();
+    await loadConversationsHandler();
 
     const server = app.listen(PORT, () => {
       console.log('');
@@ -241,6 +267,7 @@ app.get('/api/health', async (_req, res) => {
       console.log(`📊 Health check:   http://localhost:${PORT}/api/health`);
       console.log(`💬 Chat endpoint:  http://localhost:${PORT}/api/chat/route`);
       console.log(`📱 Twilio:         http://localhost:${PORT}/api/whatsapp/twilio`);
+      console.log(`💬 Conversas:      http://localhost:${PORT}/api/conversations`);
       console.log('========================================');
       console.log('');
     });
