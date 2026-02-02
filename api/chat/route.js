@@ -23,6 +23,12 @@ import {
 // Importa utilidades
 import { getDateTimeContext } from '../../src/api/utils/index.js'
 
+// Importa sistema de histórico de conversas (persistência no Supabase)
+import {
+  getOrCreateConversation,
+  saveMessage as saveMessageToDb
+} from '../../src/lib/conversationHistory.js'
+
 // Detecta qual API usar (Anthropic preferido, OpenAI como fallback)
 const USE_ANTHROPIC = process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-')
 const USE_OPENAI = process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your-')
@@ -338,6 +344,34 @@ export async function POST(request) {
     // Salva no histórico (Upstash Redis com persistência)
     await saveMessage(convId, 'user', message)
     await saveMessage(convId, 'assistant', result.message)
+
+    // === PERSISTÊNCIA NO SUPABASE (histórico permanente para CRM) ===
+    try {
+      // Usa o conversationId como identificador único (chat do site)
+      const dbConversationId = await getOrCreateConversation(`site_${convId}`)
+
+      if (dbConversationId) {
+        // Salva mensagem do usuário
+        await saveMessageToDb({
+          conversationId: dbConversationId,
+          role: 'user',
+          content: message
+        })
+
+        // Salva resposta da Camila
+        await saveMessageToDb({
+          conversationId: dbConversationId,
+          role: 'assistant',
+          content: result.message,
+          toolName: result.toolCalled || null
+        })
+
+        logger.debug('Messages persisted to Supabase (site chat):', { dbConversationId })
+      }
+    } catch (dbError) {
+      // Não falha a requisição se o salvamento no DB falhar
+      logger.warn('Failed to persist to Supabase:', dbError.message)
+    }
 
     return new Response(
       JSON.stringify({
