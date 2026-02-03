@@ -62,12 +62,168 @@ function getNextMonday() {
   return `${day}/${month}/${year}`;
 }
 
+// ============================================
+// SISTEMA DE QUALIFICAÇÃO - SUPERPOTÊNCIA
+// ============================================
+
+/**
+ * Registra métrica de qualificação no Supabase
+ * @param {string} type - Tipo da métrica (blocked, approved, warning)
+ * @param {object} data - Dados da métrica
+ */
+async function trackQualificationMetric(type, data) {
+  try {
+    if (!isSupabaseConfigured()) return;
+
+    await supabase
+      .from('qualification_metrics')
+      .insert([{
+        metric_type: type,
+        vehicle_interest: data.vehicleInterest || null,
+        detected_intent: data.intent || null,
+        block_reason: data.blockReason || null,
+        customer_phone: data.phone || null,
+        created_at: new Date().toISOString()
+      }]);
+
+    logger.info(`[Qualification] Métrica registrada: ${type}`, data);
+  } catch (error) {
+    // Não falha o fluxo se métrica falhar
+    logger.warn('[Qualification] Erro ao registrar métrica:', error.message);
+  }
+}
+
+/**
+ * Detecta se cliente quer picape aberta baseado no interesse
+ * @param {string} vehicleInterest - Texto do interesse do cliente
+ * @returns {object} { wantsPicape, wantsSUV, mentionsHilux, rawIntent }
+ */
+function detectVehicleTypeIntent(vehicleInterest) {
+  if (!vehicleInterest) return { wantsPicape: false, wantsSUV: false, mentionsHilux: false, rawIntent: null };
+
+  const interest = vehicleInterest.toLowerCase();
+
+  // Palavras que indicam PICAPE ABERTA
+  const picapeKeywords = ['picape', 'caçamba', 'aberta', 'carga', 'transporte', 'trabalho pesado', 'cabine dupla'];
+  const wantsPicape = picapeKeywords.some(k => interest.includes(k));
+
+  // Palavras que indicam SUV
+  const suvKeywords = ['suv', 'fechado', 'família', '7 lugares', 'porta-malas', 'sw4'];
+  const wantsSUV = suvKeywords.some(k => interest.includes(k));
+
+  // Menciona Hilux especificamente
+  const mentionsHilux = interest.includes('hilux');
+
+  // Determina intenção raw
+  let rawIntent = 'indefinido';
+  if (wantsPicape) rawIntent = 'picape_aberta';
+  else if (wantsSUV) rawIntent = 'suv_fechado';
+  else if (mentionsHilux) rawIntent = 'hilux_ambiguo';
+
+  return { wantsPicape, wantsSUV, mentionsHilux, rawIntent };
+}
+
+/**
+ * 🚨 VALIDAÇÃO CRÍTICA - BLOQUEIA agendamentos incompatíveis
+ * @param {string} vehicleInterest - Interesse declarado
+ * @param {string} phone - Telefone do cliente (para métricas)
+ * @returns {object} Resultado da validação com BLOQUEIO se incompatível
+ */
+async function validateVehicleCompatibility(vehicleInterest, phone = null) {
+  const intent = detectVehicleTypeIntent(vehicleInterest);
+
+  // =====================================================
+  // BLOQUEIO 1: Cliente quer "Hilux aberta/picape"
+  // Nossa Hilux é SW4 (SUV FECHADO) - INCOMPATÍVEL!
+  // =====================================================
+  if (intent.mentionsHilux && intent.wantsPicape && !intent.wantsSUV) {
+    logger.error('🚫 BLOQUEIO: Cliente quer Hilux PICAPE mas nossa Hilux é SW4 (SUV FECHADO)!', { vehicleInterest });
+
+    // Registra métrica de BLOQUEIO
+    await trackQualificationMetric('blocked', {
+      vehicleInterest,
+      intent: intent.rawIntent,
+      blockReason: 'hilux_sw4_nao_e_picape',
+      phone
+    });
+
+    return {
+      compatible: false,
+      blocked: true, // 🚫 BLOQUEIO ATIVO
+      blockReason: 'hilux_sw4_nao_e_picape',
+      message: 'Opa! Preciso esclarecer uma coisa importante: a Hilux que temos é a SW4, que é um SUV fechado de 7 lugares - não é uma picape com caçamba. Se você precisa de picape pra transportar carga, tenho a L200 Triton (R$ 95 mil) e a Ford Ranger (R$ 115 mil). Qual delas te interessa mais?',
+      alternatives: ['L200 Triton - Picape com caçamba, Flex, 4x4', 'Ford Ranger - Picape com caçamba, Diesel, 4x4']
+    };
+  }
+
+  // =====================================================
+  // BLOQUEIO 2: Interesse muito vago (sem veículo definido)
+  // =====================================================
+  if (!vehicleInterest || vehicleInterest.trim().length < 3) {
+    logger.warn('⚠️ BLOQUEIO: Tentativa de agendamento sem veículo definido');
+
+    await trackQualificationMetric('blocked', {
+      vehicleInterest: vehicleInterest || 'VAZIO',
+      intent: 'indefinido',
+      blockReason: 'veiculo_nao_definido',
+      phone
+    });
+
+    return {
+      compatible: false,
+      blocked: true,
+      blockReason: 'veiculo_nao_definido',
+      message: 'Antes de agendar, preciso saber qual veículo te interessa! Posso te mostrar as opções. Qual seu orçamento aproximado?'
+    };
+  }
+
+  // =====================================================
+  // ALERTA: Hilux mencionada mas intenção ambígua
+  // Não bloqueia, mas registra para análise
+  // =====================================================
+  if (intent.mentionsHilux && !intent.wantsPicape && !intent.wantsSUV) {
+    logger.warn('⚠️ ALERTA: Hilux mencionada sem especificar tipo (picape ou SUV)', { vehicleInterest });
+
+    await trackQualificationMetric('warning', {
+      vehicleInterest,
+      intent: 'hilux_ambiguo',
+      blockReason: null,
+      phone
+    });
+
+    return {
+      compatible: true,
+      blocked: false,
+      warning: true,
+      warningType: 'hilux_ambiguo',
+      message: null, // Não bloqueia, só registra
+      suggestion: 'Confirmar se cliente quer SW4 (SUV 7 lugares) ou picape com caçamba'
+    };
+  }
+
+  // =====================================================
+  // APROVADO: Interesse claro e compatível
+  // =====================================================
+  await trackQualificationMetric('approved', {
+    vehicleInterest,
+    intent: intent.rawIntent,
+    blockReason: null,
+    phone
+  });
+
+  return { compatible: true, blocked: false };
+}
+
 /**
  * Valida parâmetros obrigatórios do agendamento
+ * 🚨 SISTEMA DE QUALIFICAÇÃO COM BLOQUEIO REAL
  */
-function validateAppointmentParams(params) {
-  const { customerName, phone, preferredDate } = params;
+async function validateAppointmentParams(params) {
+  const { customerName, phone, preferredDate, vehicleInterest } = params;
 
+  // =====================================================
+  // VALIDAÇÃO 1: Dados básicos obrigatórios
+  // =====================================================
   if (!customerName || !phone) {
     logger.error('Missing required appointment params:', { customerName, phone });
     return {
@@ -77,7 +233,9 @@ function validateAppointmentParams(params) {
     };
   }
 
-  // 🚫 VALIDAÇÃO CRÍTICA: Rejeita agendamentos em domingo
+  // =====================================================
+  // VALIDAÇÃO 2: Rejeita agendamentos em domingo
+  // =====================================================
   if (isSunday(preferredDate)) {
     const nextMonday = getNextMonday();
     logger.warn('Tentativa de agendamento em domingo rejeitada:', { preferredDate });
@@ -89,7 +247,38 @@ function validateAppointmentParams(params) {
     };
   }
 
-  return { valid: true };
+  // =====================================================
+  // 🚨 VALIDAÇÃO 3: COMPATIBILIDADE DE VEÍCULO (CRÍTICO!)
+  // Esta validação BLOQUEIA agendamentos incompatíveis
+  // =====================================================
+  const compatibility = await validateVehicleCompatibility(vehicleInterest, phone);
+
+  if (compatibility.blocked) {
+    logger.error('🚫 AGENDAMENTO BLOQUEADO por incompatibilidade:', {
+      vehicleInterest,
+      blockReason: compatibility.blockReason,
+      phone
+    });
+
+    return {
+      valid: false,
+      error: compatibility.blockReason,
+      message: compatibility.message,
+      blocked: true,
+      alternatives: compatibility.alternatives || null
+    };
+  }
+
+  // Log de warning se houver (mas não bloqueia)
+  if (compatibility.warning) {
+    logger.warn('⚠️ Agendamento aprovado com alerta:', {
+      vehicleInterest,
+      warningType: compatibility.warningType,
+      suggestion: compatibility.suggestion
+    });
+  }
+
+  return { valid: true, qualified: true };
 }
 
 /**
@@ -261,18 +450,47 @@ export async function scheduleVisit(params) {
     logger.debug('Scheduling visit:', {
       customerName: params.customerName,
       phone: params.phone,
-      visitType: params.visitType
+      visitType: params.visitType,
+      vehicleInterest: params.vehicleInterest
     });
 
-    // Validação de parâmetros obrigatórios
-    const validation = validateAppointmentParams(params);
+    // =====================================================
+    // 🚨 VALIDAÇÃO COM SISTEMA DE QUALIFICAÇÃO (SUPERPOTÊNCIA)
+    // Esta validação pode BLOQUEAR agendamentos incompatíveis
+    // =====================================================
+    const validation = await validateAppointmentParams(params);
+
     if (!validation.valid) {
+      // Se foi BLOQUEADO pelo sistema de qualificação
+      if (validation.blocked) {
+        logger.error('🚫 AGENDAMENTO REJEITADO pelo sistema de qualificação:', {
+          error: validation.error,
+          vehicleInterest: params.vehicleInterest,
+          alternatives: validation.alternatives
+        });
+
+        return {
+          success: false,
+          blocked: true,
+          blockReason: validation.error,
+          error: validation.error,
+          message: validation.message,
+          alternatives: validation.alternatives || null
+        };
+      }
+
+      // Outros erros de validação (dados faltando, domingo, etc)
       return {
         success: false,
         error: validation.error,
         message: validation.message
       };
     }
+
+    logger.info('✅ Agendamento APROVADO pelo sistema de qualificação:', {
+      vehicleInterest: params.vehicleInterest,
+      qualified: validation.qualified
+    });
 
     // 1. Busca ou cria lead pelo telefone
     const lead = await findOrCreateLead(params.phone, params.customerName);

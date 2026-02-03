@@ -160,6 +160,50 @@ app.get('/api/conversations', async (req, res) => {
   }
 });
 
+// =====================================================
+// 📊 ROTAS DE MÉTRICAS DE QUALIFICAÇÃO (SUPERPOTÊNCIA)
+// =====================================================
+let qualificationMetricsHandler;
+async function loadQualificationMetricsHandler() {
+  const module = await import('../src/api/handlers/qualificationMetrics.js');
+  qualificationMetricsHandler = module;
+  console.log('✅ Qualification Metrics handler loaded');
+}
+
+// GET /api/qualification-metrics - Resumo de métricas
+app.get('/api/qualification-metrics', async (req, res) => {
+  try {
+    if (!qualificationMetricsHandler) {
+      await loadQualificationMetricsHandler();
+    }
+    await qualificationMetricsHandler.handleGetQualificationMetrics(req, res);
+  } catch (error) {
+    console.error('❌ Error in qualification metrics route:', error);
+    captureException(error, { service: 'qualification-metrics' });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/qualification-metrics/daily - Métricas por dia
+app.get('/api/qualification-metrics/daily', async (req, res) => {
+  try {
+    if (!qualificationMetricsHandler) {
+      await loadQualificationMetricsHandler();
+    }
+    await qualificationMetricsHandler.handleGetQualificationDaily(req, res);
+  } catch (error) {
+    console.error('❌ Error in daily metrics route:', error);
+    captureException(error, { service: 'qualification-metrics-daily' });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
 // Rota catch-all para servir o index.html do frontend para rotas do React Router
 app.get(/^(?!\/api)/, (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));

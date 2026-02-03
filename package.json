@@ -52,6 +52,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/ui": "^2.1.9",
     "autoprefixer": "^10.4.17",
+    "caniuse-lite": "^1.0.30001767",
     "concurrently": "^9.2.1",
     "cssnano": "^6.1.2",
     "dotenv": "^17.2.3",

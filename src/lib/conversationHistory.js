@@ -9,26 +9,30 @@ import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 import logger from './logger.js';
 
 /**
- * Busca ou cria uma conversa ativa para o WhatsApp
- * @param {string} whatsapp - Número do WhatsApp
+ * Busca ou cria uma conversa ativa
+ * @param {string} identifier - Número do WhatsApp OU identificador do site (ex: "site_abc123")
  * @param {string} leadId - ID do lead (opcional)
  * @returns {Promise<string|null>} ID da conversa
  */
-export async function getOrCreateConversation(whatsapp, leadId = null) {
+export async function getOrCreateConversation(identifier, leadId = null) {
   if (!isSupabaseConfigured()) {
     logger.debug('Supabase not configured, skipping conversation history');
     return null;
   }
 
   try {
-    // Limpa o número
-    const cleanWhatsapp = whatsapp.replace(/\D/g, '');
+    // Detecta se é conversa do site ou WhatsApp
+    const isSiteChat = identifier.startsWith('site_');
+    const channel = isSiteChat ? 'site' : 'whatsapp';
+
+    // Para WhatsApp, limpa o número. Para site, mantém o identificador completo
+    const cleanIdentifier = isSiteChat ? identifier : identifier.replace(/\D/g, '');
 
     // Busca conversa ativa recente (últimas 24h)
     const { data: existingConversation } = await supabase
       .from('conversations')
       .select('id, last_message_at')
-      .eq('whatsapp', cleanWhatsapp)
+      .eq('whatsapp', cleanIdentifier)
       .eq('status', 'ativa')
       .order('last_message_at', { ascending: false })
       .limit(1)
@@ -51,12 +55,18 @@ export async function getOrCreateConversation(whatsapp, leadId = null) {
     }
 
     // Cria nova conversa
+    // session_id usa o identificador original (para site: "site_xxx", para whatsapp: número)
+    const sessionId = identifier.startsWith('site_')
+      ? identifier.replace('site_', '')
+      : cleanIdentifier;
+
     const { data: newConversation, error } = await supabase
       .from('conversations')
       .insert([{
-        whatsapp: cleanWhatsapp,
+        whatsapp: cleanIdentifier,
+        session_id: sessionId,
         lead_id: leadId,
-        channel: 'whatsapp',
+        channel: channel, // 'site' ou 'whatsapp'
         status: 'ativa',
         started_at: new Date().toISOString()
       }])
@@ -68,7 +78,7 @@ export async function getOrCreateConversation(whatsapp, leadId = null) {
       return null;
     }
 
-    logger.info('New conversation created:', { id: newConversation.id, whatsapp: cleanWhatsapp });
+    logger.info('New conversation created:', { id: newConversation.id, channel, identifier: cleanIdentifier });
     return newConversation.id;
   } catch (error) {
     logger.error('Error in getOrCreateConversation:', error);
@@ -104,6 +114,9 @@ export async function saveMessage({
   }
 
   try {
+    const now = new Date().toISOString();
+
+    // Salva a mensagem
     const { data, error } = await supabase
       .from('messages')
       .insert([{
@@ -115,7 +128,7 @@ export async function saveMessage({
         tool_name: toolName,
         tool_input: toolInput,
         tool_output: toolOutput,
-        created_at: new Date().toISOString()
+        created_at: now
       }])
       .select()
       .single();
@@ -124,6 +137,12 @@ export async function saveMessage({
       logger.error('Error saving message:', error);
       return null;
     }
+
+    // Atualiza last_message_at na conversa (CRÍTICO para ordenação no CRM)
+    await supabase
+      .from('conversations')
+      .update({ last_message_at: now })
+      .eq('id', conversationId);
 
     return data.id;
   } catch (error) {

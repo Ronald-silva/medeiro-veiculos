@@ -15,6 +15,7 @@ export const carsInventory = [
     color: 'A consultar',
     fuel: 'Diesel',
     transmission: 'Automático',
+    vehicleType: 'suv_fechado', // CRÍTICO: SUV FECHADO, NÃO É PICAPE!
     features: [
       '7 lugares',
       'Motor 3.0 Diesel',
@@ -24,9 +25,10 @@ export const carsInventory = [
       'Aro de liga leve',
       'Bancos em couro',
       'Ar-condicionado',
-      'Direção hidráulica'
+      'Direção hidráulica',
+      '⚠️ SUV FECHADO - NÃO É PICAPE'
     ],
-    description: 'Toyota Hilux SW4 SRV 2012 7 Lugares 4x4 Diesel. SUV robusta e espaçosa, perfeita para família e aventura.',
+    description: '⚠️ ATENÇÃO: SUV FECHADO (não é picape!). Toyota Hilux SW4 SRV 2012 7 Lugares 4x4 Diesel. SUV robusta com porta-malas fechado, perfeita para família. Se procura picape com caçamba, veja L200 Triton ou Ranger.',
     images: [
       '/cars/hilux-1.jpeg',
       '/cars/hilux-2.jpeg',
@@ -101,49 +103,7 @@ export const carsInventory = [
     featured: true,
     tags: ['flex', 'automática', 'suv', 'honda', 'top de linha']
   },
-  {
-    id: 'mobi-2017',
-    name: 'Fiat Mobi Easy',
-    year: 2017,
-    brand: 'Fiat',
-    model: 'Mobi',
-    version: 'Ano 2017 Modelo Easy',
-    price: 39900,
-    mileage: 'A consultar',
-    color: 'A consultar',
-    fuel: 'Flex',
-    transmission: 'Manual',
-    features: [
-      'Direção elétrica',
-      'Ar-condicionado',
-      'Vidros elétricos',
-      'Trava elétrica',
-      'Som com Bluetooth',
-      'Freios ABS',
-      'Airbags'
-    ],
-    description: 'Fiat Mobi 2017 Easy. Carro econômico e ágil para cidade. Baixo consumo e IPVA reduzido.',
-    images: [
-      '/cars/mobi-1.jpeg',
-      '/cars/mobi-2.jpeg',
-      '/cars/mobi-3.jpeg',
-      '/cars/mobi-4.jpeg',
-      '/cars/mobi-5.jpeg',
-      '/cars/mobi-6.jpeg',
-      '/cars/mobi-7.jpeg',
-      '/cars/mobi-8.jpeg',
-      '/cars/mobi-9.jpeg',
-      '/cars/mobi-10.jpeg',
-      '/cars/mobi-11.jpeg',
-      '/cars/mobi-12.jpeg',
-      '/cars/mobi-13.jpeg',
-      '/cars/mobi-14.jpeg'
-    ],
-    status: 'available',
-    category: 'hatch',
-    featured: true,
-    tags: ['econômico', 'flex', 'manual', 'baixo consumo']
-  },
+  // MOBI VENDIDO - Removido do catálogo em 02/02/2026
   {
     id: 'moto-ninja-400',
     name: 'Kawasaki Ninja 400',
@@ -380,15 +340,17 @@ export const carsInventory = [
     color: 'A consultar',
     fuel: 'Flex',
     transmission: 'Manual',
+    vehicleType: 'picape_aberta', // PICAPE COM CAÇAMBA ABERTA
     features: [
       'Motor 3.2 FLEX (ÚNICO NO ESTOQUE)',
       'Tração 4x4',
       'Cabine dupla',
+      'CAÇAMBA ABERTA (picape)',
       'Ar-condicionado',
       'Direção hidráulica',
       'Bancos em couro'
     ],
-    description: 'L200 Triton 2015 3.2 Flex. ⭐ ÚNICO VEÍCULO FLEX DISPONÍVEL. Picape robusta e potente com motor flex, ideal para quem busca economia.',
+    description: '✅ PICAPE COM CAÇAMBA ABERTA. L200 Triton 2015 3.2 Flex. ⭐ ÚNICO VEÍCULO FLEX DISPONÍVEL. Picape robusta e potente para trabalho e transporte de carga.',
     images: [
       '/cars/L200-1.jpeg',
       '/cars/L200-2.jpeg',
@@ -516,15 +478,17 @@ export const carsInventory = [
     color: 'A consultar',
     fuel: 'Diesel',
     transmission: 'Manual',
+    vehicleType: 'picape_aberta', // PICAPE COM CAÇAMBA ABERTA
     features: [
       'Motor 3.2 Diesel',
       'Tração 4x4',
       'Cabine dupla',
+      'CAÇAMBA ABERTA (picape)',
       'Ar-condicionado',
       'Direção hidráulica',
       'Vidros elétricos'
     ],
-    description: 'Ford Ranger 2014 3.2 Diesel. Picape potente e resistente.',
+    description: '✅ PICAPE COM CAÇAMBA ABERTA. Ford Ranger 2014 3.2 Diesel. Picape potente e resistente para trabalho e transporte de carga.',
     images: [
       '/cars/Ranger-1.jpeg',
       '/cars/Ranger-2.jpeg',

@@ -35,16 +35,7 @@ const VEHICLES_INVENTORY = [
     features: ['Manual', 'Gasolina', 'Esportiva'],
     description: 'Moto esportiva 400cc'
   },
-  {
-    id: 4,
-    name: 'Fiat Mobi Easy 2017',
-    price: 39900,
-    type: 'Hatch',
-    year: 2017,
-    km: 'A consultar',
-    features: ['Manual', 'Flex', 'Direção elétrica'],
-    description: 'Compacto econômico, ideal cidade'
-  },
+  // MOBI VENDIDO - Removido em 02/02/2026
   {
     id: 5,
     name: 'Suzuki Grand Vitara 2012',
@@ -80,10 +71,11 @@ const VEHICLES_INVENTORY = [
     name: 'Mitsubishi L200 Triton 2015',
     price: 95000,
     type: 'Picape',
+    vehicleType: 'picape_aberta', // CAÇAMBA ABERTA
     year: 2015,
     km: 'A consultar',
-    features: ['Manual', 'Flex', '4x4'],
-    description: 'ÚNICO FLEX - Picape robusta'
+    features: ['Manual', 'Flex', '4x4', 'CAÇAMBA ABERTA'],
+    description: '✅ PICAPE COM CAÇAMBA ABERTA - ÚNICO FLEX - Para trabalho e transporte de carga'
   },
   {
     id: 9,
@@ -110,20 +102,22 @@ const VEHICLES_INVENTORY = [
     name: 'Ford Ranger 2014',
     price: 115000,
     type: 'Picape',
+    vehicleType: 'picape_aberta', // CAÇAMBA ABERTA
     year: 2014,
     km: 'A consultar',
-    features: ['Manual', 'Diesel', '4x4'],
-    description: 'Picape robusta 3.2 diesel'
+    features: ['Manual', 'Diesel', '4x4', 'CAÇAMBA ABERTA'],
+    description: '✅ PICAPE COM CAÇAMBA ABERTA - 3.2 diesel - Para trabalho e transporte de carga'
   },
   {
     id: 12,
     name: 'Toyota Hilux SW4 SRV 2012',
     price: 135000,
     type: 'SUV',
+    vehicleType: 'suv_fechado', // ⚠️ NÃO É PICAPE!
     year: 2012,
     km: 'A consultar',
-    features: ['Automático', 'Diesel', '4x4', '7 lugares'],
-    description: 'SUV 7 lugares 4x4 diesel'
+    features: ['Automático', 'Diesel', '4x4', '7 lugares', '⚠️ SUV FECHADO'],
+    description: '⚠️ ATENÇÃO: SUV FECHADO (NÃO É PICAPE!) - 7 lugares 4x4 diesel - Para família, NÃO tem caçamba'
   }
 ];
 
