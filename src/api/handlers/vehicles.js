@@ -8,7 +8,7 @@ const VEHICLES_INVENTORY = [
   {
     id: 1,
     name: 'Honda CG 160 Start 2019',
-    price: 15000,
+    price: 13500,
     type: 'Moto',
     year: 2019,
     km: 'A consultar',

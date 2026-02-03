@@ -297,7 +297,7 @@ export const carsInventory = [
     brand: 'Honda',
     model: 'CG 160',
     version: '2018/2019 Start',
-    price: 15000,
+    price: 13500,
     mileage: 'A consultar',
     color: 'A consultar',
     fuel: 'Gasolina',

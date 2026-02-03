@@ -20,7 +20,7 @@ export const INVENTORY = `🚨🚨🚨 PROTOCOLO DE ESTOQUE - OBRIGATÓRIO 🚨�
 - Se cliente quer "Hilux aberta/picape", ofereça L200 ou Ranger!
 
 📊 **FAIXAS DE PREÇO APROXIMADAS:**
-- Até 20 mil: Honda CG 160 Start (R$ 15.000)
+- Até 20 mil: Honda CG 160 Start (R$ 13.500)
 - 20-40 mil: Ninja 400, Spacefox
 - 40-80 mil: Vitara, Onix Plus Premier (R$ 71.9k)
 - 80-110 mil: L200 Triton, Pajero, HR-V, Corolla
