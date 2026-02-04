@@ -346,7 +346,58 @@ function extractTwilioData(body) {
 }
 
 /**
+ * Processa mensagem de forma ASSÍNCRONA (fire and forget)
+ * Isso permite que o webhook responda imediatamente
+ */
+async function processMessageAsync(webhookData) {
+  const { phoneNumber, message, pushName } = webhookData
+  const startTime = Date.now()
+
+  try {
+    logger.info('[Twilio] ASYNC processing started:', {
+      pushName,
+      phonePreview: phoneNumber.substring(0, 10) + '...',
+      messagePreview: message.substring(0, 100)
+    })
+
+    // ID da conversa = número do WhatsApp
+    const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
+
+    // Processa com Camila
+    const camilaResponse = await processCamilaMessage(message, conversationId, {
+      phone: phoneNumber,
+      name: pushName,
+      _startTime: startTime
+    })
+
+    // Calcula tempo de processamento
+    const processingTime = Date.now() - startTime
+    logger.info(`[Twilio] ASYNC processing completed in ${processingTime}ms`)
+
+    // Envia resposta via Twilio API
+    await sendTwilioMessage(phoneNumber, camilaResponse)
+
+    logger.info('[Twilio] Response sent successfully', {
+      totalTime: Date.now() - startTime
+    })
+
+  } catch (error) {
+    logger.error('[Twilio] ASYNC process error:', error)
+
+    // Tenta enviar mensagem de fallback em caso de erro
+    try {
+      await sendTwilioMessage(phoneNumber,
+        'Oi! Tive um probleminha aqui, mas já estou voltando. Me manda sua mensagem de novo? 😊'
+      )
+    } catch (fallbackError) {
+      logger.error('[Twilio] Failed to send fallback message:', fallbackError)
+    }
+  }
+}
+
+/**
  * Endpoint POST para processar mensagens do Twilio WhatsApp
+ * OTIMIZADO: Responde imediatamente e processa em background
  */
 export default async function handler(req, res) {
   // CORS headers
@@ -364,6 +415,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  const webhookReceivedAt = Date.now()
+
   try {
     logger.info('[Twilio] WEBHOOK RECEIVED:', {
       body: req.body,
@@ -378,52 +431,23 @@ export default async function handler(req, res) {
       return res.status(200).send('OK')
     }
 
-    const { phoneNumber, message, pushName } = webhookData
-    const startTime = Date.now()
-
-    logger.info('[Twilio] Processing message from:', {
-      pushName,
-      phonePreview: phoneNumber.substring(0, 10) + '...',
-      messagePreview: message.substring(0, 100)
+    // ============================================
+    // RESPOSTA IMEDIATA AO TWILIO (< 200ms)
+    // ============================================
+    // Processa a mensagem de forma ASSÍNCRONA
+    // Não aguarda o processamento - responde imediatamente
+    processMessageAsync(webhookData).catch(err => {
+      logger.error('[Twilio] Background processing failed:', err)
     })
 
-    // ID da conversa = número do WhatsApp
-    const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
+    // Responde ao Twilio IMEDIATAMENTE
+    const responseTime = Date.now() - webhookReceivedAt
+    logger.info(`[Twilio] Webhook response time: ${responseTime}ms (target: <200ms)`)
 
-    // Feedback imediato (marca como recebido)
-    await sendReadReceipt(phoneNumber)
-
-    // Processa com Camila (otimizado) - passa telefone, nome e timestamp
-    const camilaResponse = await processCamilaMessage(message, conversationId, {
-      phone: phoneNumber,
-      name: pushName,
-      _startTime: startTime
-    })
-
-    // Calcula tempo de processamento
-    const processingTime = Date.now() - startTime
-    logger.info(`[Twilio] Processing time: ${processingTime}ms`)
-
-    // Simula tempo de digitação humanizado baseado no tamanho da resposta
-    // Humanos digitam ~40 palavras/minuto = ~200 chars/minuto = ~3.3 chars/segundo
-    const responseLength = camilaResponse.length
-    const estimatedTypingTime = Math.min(responseLength * 30, 4000) // ~30ms por char, max 4s
-    const totalDesiredTime = Math.max(2000, estimatedTypingTime) // Mínimo 2s para parecer natural
-    const remainingDelay = Math.max(0, totalDesiredTime - processingTime)
-
-    if (remainingDelay > 0) {
-      logger.info(`[Twilio] Adding ${remainingDelay}ms delay to simulate typing`)
-      await simulateTyping(phoneNumber, remainingDelay)
-    }
-
-    // Envia resposta de volta via Twilio
-    await sendTwilioMessage(phoneNumber, camilaResponse)
-
-    // Twilio espera resposta TwiML ou 200 OK
     return res.status(200).send('OK')
 
   } catch (error) {
-    logger.error('[Twilio] Process error:', error)
+    logger.error('[Twilio] Webhook error:', error)
     // Retorna 200 mesmo com erro para Twilio não ficar retentando
     return res.status(200).send('OK')
   }
