@@ -229,7 +229,7 @@ medeiros-veiculos/
 - **Backend:** Supabase (PostgreSQL) + Express.js
 - **IA:** Anthropic Claude (claude-sonnet-4-5-20250929)
 - **Cache:** Upstash Redis (histórico de conversas)
-- **WhatsApp:** Evolution API v2.3.7
+- **WhatsApp:** Twilio API
 - **Deploy:** Railway
 - **Logging:** Winston (estruturado)
 - **Validação:** Zod (environment variables)
