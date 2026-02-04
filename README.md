@@ -59,6 +59,8 @@ Acesse: http://localhost:3000/crm
 - ✅ Relatório executivo para o dono
 - ✅ Sistema de comissão fixa (R$ 300/venda)
 - ✅ Multi-usuário (Ronald + Adel)
+- ✅ **Gestão de Veículos** - CRUD completo com upload de imagens
+- ✅ **Painel de Supervisão IA** - Monitora validações da Camila
 
 ### 🤖 Camila - Agente IA de Vendas Especializada
 - ✅ Atendimento 24/7 via WhatsApp
@@ -66,6 +68,8 @@ Acesse: http://localhost:3000/crm
 - ✅ Agendamento inteligente de visitas
 - ✅ Qualificação automática de leads (Lead Scoring)
 - ✅ Transferência para vendedor humano
+- ✅ **Supervisor de IA** - Valida respostas antes de enviar
+- ✅ **Inventário Dinâmico** - Supabase como fonte única de dados
 
 #### 🎯 Metodologias de Vendas Implementadas
 
@@ -114,6 +118,19 @@ A Camila qualifica automaticamente cada lead com pontuação baseada em:
 - 🌡️ **Warm Lead (40-69)**: Potencial, continuar nutrição
 - ❄️ **Cold Lead (0-39)**: Manter relacionamento, follow-up futuro
 
+#### 🛡️ Supervisor de IA (Novo!)
+
+O sistema possui uma camada de supervisão que valida todas as respostas da Camila antes de enviar:
+
+| Validação | Descrição |
+|-----------|-----------|
+| **Preços** | Verifica se preços mencionados correspondem ao Supabase |
+| **Veículos** | Confirma que veículos citados existem no estoque |
+| **Qualidade** | Detecta respostas curtas, múltiplas perguntas, "não entendi" |
+| **Auto-correção** | Corrige preços errados automaticamente |
+
+**Monitoramento:** CRM → Supervisão IA → Visualize todas as validações em tempo real
+
 #### 💡 Diferenciais da Camila
 
 - **Transparência**: Nunca força venda, sempre orienta o melhor para o cliente
@@ -121,6 +138,7 @@ A Camila qualifica automaticamente cada lead com pontuação baseada em:
 - **Personalização**: Adapta recomendações ao perfil e necessidade específica
 - **Humanização**: Tom amigável, uso de emojis moderado, linguagem natural
 - **Foco em Agendamento**: Principal objetivo é trazer o cliente até a loja
+- **Inventário Dinâmico**: Consulta Supabase em tempo real (não usa lista fixa)
 
 ---
 
@@ -187,7 +205,32 @@ medeiros-veiculos/
 - **Deploy:** Railway
 - **Logging:** Winston (estruturado)
 - **Validação:** Zod (environment variables)
-- **Testes:** Vitest (31 testes unitários)
+- **Testes:** Vitest + Testes de Sistema customizados
+
+---
+
+## 🧪 Testes
+
+```bash
+# Testes do Supervisor de IA
+npm run test:supervisor
+
+# Testes de integração com Supabase
+npm run test:system
+
+# Testes da API de Chat (requer servidor rodando)
+npm run test:chat
+
+# Todos os testes
+npm run test:all
+```
+
+**Cobertura:**
+- Validação de preços e veículos
+- Estrutura do banco de dados
+- CRUD de veículos
+- Sistema de supervisão
+- Logs de aprendizado
 
 ---
 
