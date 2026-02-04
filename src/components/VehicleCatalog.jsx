@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getFeaturedCars } from '../data/carsInventory';
+import { useFeaturedVehicles, formatPrice as formatPriceUtil } from '../hooks/useVehicles';
 import Badge from './ui/Badge';
 import ConsultoraAvatar from './ConsultoraAvatar';
 
 export default function VehicleCatalog({ onVehicleInterest }) {
-  const [vehicles] = useState(getFeaturedCars()); // Usa carros em destaque
+  const { vehicles, loading } = useFeaturedVehicles(); // Busca do Supabase
   const [selectedType, setSelectedType] = useState('Todos');
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300000 });
@@ -22,13 +22,18 @@ export default function VehicleCatalog({ onVehicleInterest }) {
     return typeMatch && brandMatch && priceMatch;
   });
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0
-    }).format(price);
-  };
+  const formatPrice = formatPriceUtil;
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="container text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-4 text-gray-600">Carregando veículos...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-gray-50">

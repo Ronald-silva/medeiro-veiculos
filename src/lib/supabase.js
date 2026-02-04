@@ -196,6 +196,131 @@ export async function deleteAppointment(appointmentId) {
   return true
 }
 
+// VEÍCULOS (Catálogo)
+export async function getVehicles(filters = {}) {
+  let query = supabase
+    .from('vehicles')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (filters.status) {
+    query = query.eq('status', filters.status)
+  }
+  if (filters.type) {
+    query = query.eq('type', filters.type)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
+export async function getAvailableVehicles() {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('status', 'available')
+    .order('price', { ascending: true })
+
+  if (error) throw error
+  return data
+}
+
+export async function createVehicle(vehicleData) {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .insert([{
+      ...vehicleData,
+      status: vehicleData.status || 'available',
+      created_at: new Date().toISOString()
+    }])
+    .select()
+
+  if (error) throw error
+  return data[0]
+}
+
+export async function updateVehicle(vehicleId, vehicleData) {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .update({
+      ...vehicleData,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', vehicleId)
+    .select()
+
+  if (error) throw error
+  return data[0]
+}
+
+export async function deleteVehicle(vehicleId) {
+  const { error } = await supabase
+    .from('vehicles')
+    .delete()
+    .eq('id', vehicleId)
+
+  if (error) throw error
+  return true
+}
+
+export async function markVehicleAsSold(vehicleId) {
+  return updateVehicle(vehicleId, { status: 'sold' })
+}
+
+// UPLOAD DE IMAGENS
+const STORAGE_BUCKET = 'vehicle-images'
+
+export async function uploadVehicleImage(file, vehicleId = null) {
+  try {
+    // Gera nome único para o arquivo
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${vehicleId || 'new'}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+    const filePath = `vehicles/${fileName}`
+
+    // Faz upload para o Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) throw error
+
+    // Retorna URL pública da imagem
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filePath)
+
+    return {
+      success: true,
+      url: urlData.publicUrl,
+      path: filePath
+    }
+  } catch (error) {
+    console.error('Erro ao fazer upload:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}
+
+export async function deleteVehicleImage(imagePath) {
+  try {
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .remove([imagePath])
+
+    if (error) throw error
+    return { success: true }
+  } catch (error) {
+    console.error('Erro ao deletar imagem:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 // MÉTRICAS DA CAMILA (Conversas WhatsApp)
 export async function getCamilaMetrics(days = 7) {
   try {

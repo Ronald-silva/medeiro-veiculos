@@ -6,7 +6,9 @@ import {
   PlusIcon,
   DocumentChartBarIcon,
   CalendarDaysIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  TruckIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { getSales, getLeads, getDashboardMetrics, getAppointments, updateAppointmentStatus, deleteAppointment, getCamilaMetrics } from '../../lib/supabase'
 import SalesModal from '../../components/crm/SalesModal'
@@ -15,6 +17,8 @@ import MetricsCards from '../../components/crm/dashboard/MetricsCards'
 import SalesTable from '../../components/crm/dashboard/SalesTable'
 import AppointmentsTable from '../../components/crm/dashboard/AppointmentsTable'
 import ConversationsPanel from '../../components/crm/dashboard/ConversationsPanel'
+import VehicleAdmin from '../../components/crm/dashboard/VehicleAdmin'
+import SupervisionPanel from '../../components/crm/dashboard/SupervisionPanel'
 export default function CRMDashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -197,6 +201,32 @@ export default function CRMDashboard() {
                 Conversas
               </span>
             </button>
+            <button
+              onClick={() => setActiveTab('vehicles')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'vehicles'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <TruckIcon className="w-4 h-4" />
+                Veículos
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('supervision')}
+              className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === 'supervision'
+                  ? 'border-purple-500 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <ShieldCheckIcon className="w-4 h-4" />
+                Supervisão IA
+              </span>
+            </button>
           </nav>
         </div>
       </div>
@@ -311,6 +341,16 @@ export default function CRMDashboard() {
             {/* CONVERSATIONS TAB */}
             {activeTab === 'conversations' && (
               <ConversationsPanel />
+            )}
+
+            {/* VEHICLES TAB */}
+            {activeTab === 'vehicles' && (
+              <VehicleAdmin />
+            )}
+
+            {/* SUPERVISION TAB */}
+            {activeTab === 'supervision' && (
+              <SupervisionPanel />
             )}
           </>
         )}

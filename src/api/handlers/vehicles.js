@@ -38,13 +38,13 @@ const VEHICLES_INVENTORY = [
   // MOBI VENDIDO - Removido em 02/02/2026
   {
     id: 5,
-    name: 'Suzuki Grand Vitara 2012',
-    price: 48000,
+    name: 'Suzuki Grand Vitara 4x4 2014',
+    price: 65000,
     type: 'SUV',
-    year: 2012,
+    year: 2014,
     km: 'A consultar',
-    features: ['Manual', 'Gasolina', '4x4'],
-    description: 'SUV compacto Limited Edition'
+    features: ['Manual', 'Gasolina', '4x4', 'Limited Edition'],
+    description: 'SUV compacto Limited Edition 2013/2014'
   },
   {
     id: 6,
@@ -56,16 +56,7 @@ const VEHICLES_INVENTORY = [
     features: ['Automático', 'Flex', 'Turbo'],
     description: 'Sedan top de linha turbo'
   },
-  {
-    id: 7,
-    name: 'Toyota Corolla XEI 2017',
-    price: 91900,
-    type: 'Sedan',
-    year: 2017,
-    km: 'A consultar',
-    features: ['Automático', 'Flex', 'Couro'],
-    description: 'Sedan premium, conforto total'
-  },
+  // COROLLA VENDIDO - Removido em 03/02/2026
   {
     id: 8,
     name: 'Mitsubishi L200 Triton 2015',

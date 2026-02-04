@@ -18,7 +18,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:system": "node tests/validate-system.js",
+    "test:supervisor": "node tests/test-supervisor.js",
+    "test:chat": "node tests/test-chat-api.js",
+    "test:all": "npm run test:supervisor && npm run test:system"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

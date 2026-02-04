@@ -8,14 +8,15 @@ import {
   ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import {
-  carsInventory,
+  useVehicles,
   carFilters,
   formatPrice,
   filterCars
-} from '../data/carsInventory'
+} from '../hooks/useVehicles'
 
 export default function CatalogPage() {
   const navigate = useNavigate()
+  const { vehicles: carsInventory, loading } = useVehicles()
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
@@ -57,6 +58,17 @@ export default function CatalogPage() {
         prev === 0 ? selectedCar.images.length - 1 : prev - 1
       )
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600 text-lg">Carregando veículos...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

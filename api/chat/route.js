@@ -29,6 +29,9 @@ import {
   saveMessage as saveMessageToDb
 } from '../../src/lib/conversationHistory.js'
 
+// Importa supervisor de validação
+import { validateResponse, applyCorrections, logValidation } from '../../src/lib/supervisor.js'
+
 // Detecta qual API usar (Anthropic preferido, OpenAI como fallback)
 const USE_ANTHROPIC = process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-')
 const USE_OPENAI = process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your-')
@@ -339,6 +342,38 @@ export async function POST(request) {
       result = await chatWithClaude(messages, convId)
     } else {
       result = await chatWithOpenAI(messages, convId)
+    }
+
+    // === SUPERVISOR: Valida resposta ANTES de enviar ===
+    try {
+      const validation = await validateResponse(result.message, {
+        toolResults: result.toolResult,
+        conversationHistory: history,
+        autoCorrect: true
+      })
+
+      // Se houver correções de preço, aplica
+      if (validation.corrections.length > 0) {
+        result.message = applyCorrections(result.message, validation.corrections)
+        logger.info('Supervisor: correções aplicadas', validation.corrections)
+      }
+
+      // Loga validação para análise
+      await logValidation(convId, validation, result.message)
+
+      // Adiciona flag de validação na resposta (para debug)
+      result.validation = {
+        isValid: validation.isValid,
+        errors: validation.errors,
+        warnings: validation.warnings
+      }
+
+      if (!validation.isValid) {
+        logger.warn('Supervisor: resposta enviada com erros', validation.errors)
+      }
+    } catch (validationError) {
+      // Não bloqueia se validação falhar
+      logger.warn('Supervisor: erro na validação', validationError.message)
     }
 
     // Salva no histórico (Upstash Redis com persistência)
