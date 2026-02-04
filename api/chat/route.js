@@ -32,6 +32,10 @@ import {
 // Importa supervisor de validação
 import { validateResponse, applyCorrections, logValidation } from '../../src/lib/supervisor.js'
 
+// === SISTEMAS DE INTELIGÊNCIA AVANÇADA ===
+import { calculatePredictiveIntent } from '../../src/lib/predictiveIntent.js'
+import { getExamplesForPrompt, detectCustomerSegment, detectVehicleInterest, detectBudgetRange } from '../../src/lib/fewShotLearning.js'
+
 // Detecta qual API usar (Anthropic preferido, OpenAI como fallback)
 const USE_ANTHROPIC = process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-')
 const USE_OPENAI = process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your-')
@@ -316,6 +320,43 @@ export async function POST(request) {
     const convId = conversationId || crypto.randomUUID()
     const history = await getConversationHistory(convId)
 
+    // === INTELIGÊNCIA PREDITIVA ===
+    let intentScore = null
+    let fewShotExamples = ''
+
+    try {
+      // Detecta contexto do cliente
+      const customerSegment = detectCustomerSegment([...history, { role: 'user', content: message }])
+      const vehicleType = detectVehicleInterest([...history, { role: 'user', content: message }])
+      const budgetRange = detectBudgetRange([...history, { role: 'user', content: message }])
+
+      // Calcula Intent Score preditivo
+      intentScore = calculatePredictiveIntent({
+        messages: [...history, { role: 'user', content: message }],
+        conversationHistory: history,
+        behavioralData: context?.behavioral || {}
+      })
+
+      logger.info('Predictive Intent:', {
+        score: intentScore.score,
+        classification: intentScore.classification,
+        confidence: intentScore.confidence,
+        recommendation: intentScore.recommendation?.action
+      })
+
+      // Busca exemplos de conversas similares para Few-Shot Learning
+      if (history.length >= 2) {
+        fewShotExamples = await getExamplesForPrompt({
+          customerSegment,
+          vehicleType,
+          budgetRange,
+          intentScore: intentScore.score
+        })
+      }
+    } catch (intentError) {
+      logger.warn('Erro ao calcular intent:', intentError.message)
+    }
+
     // Adiciona contexto se houver
     let userMessage = message
 
@@ -327,6 +368,21 @@ export async function POST(request) {
     }
 
     userMessage += `\n${dateTimeContext}`
+
+    // Adiciona Intent Score como contexto para a IA
+    if (intentScore) {
+      userMessage += `\n[Intent Score: ${intentScore.score}/100 (${intentScore.classification}) - ${intentScore.recommendation?.action || 'QUALIFY'}]`
+
+      // Se for lead quente, adiciona sugestão de resposta
+      if (intentScore.recommendation?.suggestedResponse && intentScore.score >= 50) {
+        userMessage += `\n[Sugestão: ${intentScore.recommendation.suggestedResponse}]`
+      }
+    }
+
+    // Adiciona exemplos de conversas bem-sucedidas (Few-Shot Learning)
+    if (fewShotExamples && history.length >= 4) {
+      userMessage += `\n\n${fewShotExamples}`
+    }
 
     // Monta histórico de mensagens
     const messages = [
