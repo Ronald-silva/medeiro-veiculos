@@ -8,9 +8,9 @@
  * chance de qualificar o lead (Harvard Business Review)
  */
 
-import { getBehavioralFingerprint } from './behavioralIntelligence'
-import { calculatePredictiveIntent } from './predictiveIntent'
-import { supabase } from './supabase'
+import { getBehavioralFingerprint } from './behavioralIntelligence.js'
+import { calculatePredictiveIntent } from './predictiveIntent.js'
+import { supabase } from './supabase.js'
 
 // Configuração de triggers
 const TRIGGER_CONFIG = {

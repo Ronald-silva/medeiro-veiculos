@@ -8,7 +8,7 @@
  * sobre predictive intent e behavioral fingerprinting.
  */
 
-import { supabase } from './supabase'
+import { supabase } from './supabase.js'
 
 // Pesos dos sinais comportamentais (calibrados para veículos)
 const SIGNAL_WEIGHTS = {

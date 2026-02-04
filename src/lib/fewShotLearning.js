@@ -9,7 +9,7 @@
  * (via prompt caching com exemplos relevantes)
  */
 
-import { supabase } from './supabase'
+import { supabase } from './supabase.js'
 
 // Configurações do sistema
 const CONFIG = {

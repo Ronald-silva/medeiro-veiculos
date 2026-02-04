@@ -9,7 +9,7 @@
  * ROI: +50% conversão, -33% custo por aquisição
  */
 
-import { supabase } from './supabase'
+import { supabase } from './supabase.js'
 
 // Modelo de inferência probabilística
 const INTENT_MODEL = {
