@@ -43,14 +43,6 @@ async function loadChatHandler() {
   console.log('✅ Chat handler loaded');
 }
 
-// Importa dinamicamente o handler do WhatsApp (Evolution API)
-let whatsappHandler;
-async function loadWhatsAppHandler() {
-  const module = await import('../api/whatsapp/process.js');
-  whatsappHandler = module.default;
-  console.log('✅ WhatsApp Evolution handler loaded');
-}
-
 // Importa dinamicamente o handler do Twilio
 let twilioHandler;
 async function loadTwilioHandler() {
@@ -99,26 +91,6 @@ app.post('/api/chat/route', async (req, res) => {
   } catch (error) {
     console.error('❌ Error in chat route:', error);
     captureException(error, { service: 'chat-route' });
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-});
-
-// Rota de WhatsApp (Evolution API - legado)
-app.post('/api/whatsapp/process', async (req, res) => {
-  try {
-    if (!whatsappHandler) {
-      await loadWhatsAppHandler();
-    }
-
-    // Chama o handler diretamente (já é compatível com Express)
-    await whatsappHandler(req, res);
-  } catch (error) {
-    console.error('❌ Error in WhatsApp route:', error);
-    captureException(error, { service: 'whatsapp-evolution' });
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,
@@ -298,7 +270,6 @@ app.get('/api/health', async (_req, res) => {
 (async () => {
   try {
     await loadChatHandler();
-    await loadWhatsAppHandler();
     await loadTwilioHandler();
     await loadConversationsHandler();
 

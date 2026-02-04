@@ -35,7 +35,29 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+
+# Secrets and credentials (SECURITY)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+secrets.json
+service-account*.json
+*-credentials.json
 
 # WhatsApp session data
 .wwebjs_auth/
 .wwebjs_cache/
+
+# Coverage and debug
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

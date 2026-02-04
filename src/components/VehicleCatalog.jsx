@@ -10,8 +10,8 @@ export default function VehicleCatalog({ onVehicleInterest }) {
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300000 });
 
-  // Get unique types and brands for filters
-  const types = ['Todos', ...new Set(vehicles.map(v => v.category))];
+  // Get unique types and brands for filters (filter out undefined/null to avoid duplicate keys)
+  const types = ['Todos', ...new Set(vehicles.map(v => v.category).filter(Boolean))];
   const brands = ['Todas', ...new Set(vehicles.map(v => v.brand).filter(Boolean))];
 
   // Filter vehicles

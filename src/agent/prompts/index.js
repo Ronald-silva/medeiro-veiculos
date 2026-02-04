@@ -23,7 +23,7 @@ import { EXAMPLES } from './examples.js'
 import { CLOSING } from './closing.js'
 import { PSYCHOLOGY, OBJECTION_HANDLERS } from './psychology.js'
 import { PERSONALIZATION, getPersonaPrompt, getTemperaturePrompt } from './personalization.js'
-import { selectFewShotExamples, buildExamplesSection } from '../../lib/few-shot.js'
+import { findSimilarSuccessfulConversations, formatExamplesForPrompt } from '../../lib/fewShotLearning.js'
 
 // ============================================
 // PROMPT ESTATICO (compatibilidade)
@@ -295,8 +295,8 @@ export {
   getPersonaPrompt,
   getTemperaturePrompt,
   formatContextForPrompt,
-  selectFewShotExamples,
-  buildExamplesSection
+  findSimilarSuccessfulConversations,
+  formatExamplesForPrompt
 }
 
 // ============================================
@@ -333,16 +333,15 @@ export async function buildDynamicPromptWithLearning(options = {}) {
   // Busca exemplos similares de conversas bem-sucedidas
   let dynamicExamples = '';
   try {
-    const examples = await selectFewShotExamples({
+    const examples = await findSimilarSuccessfulConversations({
       currentMessage,
       customerSegment: persona !== 'desconhecido' ? persona : null,
       vehicleType,
-      budgetRange,
-      recentMessages
+      budgetRange
     });
 
     if (examples && examples.length > 0) {
-      dynamicExamples = buildExamplesSection(examples);
+      dynamicExamples = formatExamplesForPrompt(examples);
     }
   } catch (error) {
     console.error('[Prompts] Erro ao buscar few-shot examples:', error);
