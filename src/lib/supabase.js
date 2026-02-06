@@ -14,6 +14,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '')
 
+// Helper para verificar se Supabase está configurado (compatível com supabaseClient.js)
+export const isSupabaseConfigured = () => {
+  return Boolean(supabaseUrl && supabaseAnonKey &&
+                 supabaseUrl !== 'your-project-url.supabase.co')
+}
+
 // Funções auxiliares para o CRM
 
 // LEADS

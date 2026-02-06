@@ -150,10 +150,6 @@ export default function CarShowcase() {
                   </div>
 
                   <div className="border-t border-gray-100 pt-4">
-                    <div className="flex items-center text-sm text-gray-600 mb-4">
-                      <i className="fas fa-tachometer-alt mr-2 text-primary"></i>
-                      <span>{car.km} km</span>
-                    </div>
                     <div className="flex flex-wrap gap-2 mb-4">
                       {car.features.map((feature, idx) => (
                         <span

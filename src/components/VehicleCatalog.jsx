@@ -225,10 +225,6 @@ export default function VehicleCatalog({ onVehicleInterest }) {
                         {vehicle.year}
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
-                        <i className="fas fa-tachometer-alt mr-2 text-primary"></i>
-                        {vehicle.mileage}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
                         <i className="fas fa-gas-pump mr-2 text-primary"></i>
                         {vehicle.fuel}
                       </div>

@@ -28,7 +28,7 @@ export function formatDateForAgent(date = new Date()) {
     const weekDay = parts.find(p => p.type === 'weekday')?.value || 'Segunda-feira';
     const day = parts.find(p => p.type === 'day')?.value || '01';
     const month = parts.find(p => p.type === 'month')?.value || '01';
-    const year = parts.find(p => p.type === 'year')?.value || '2025';
+    const year = parts.find(p => p.type === 'year')?.value || String(new Date().getFullYear());
     const hour = parts.find(p => p.type === 'hour')?.value || '12';
     const minutes = parts.find(p => p.type === 'minute')?.value || '00';
 
@@ -59,11 +59,11 @@ export function isBusinessHours(date = new Date()) {
     const weekDay = parts.find(p => p.type === 'weekday')?.value || '';
     const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
 
-    // Horário comercial: Segunda a Sexta 8h-18h, Sábado 8h-13h
+    // Horário comercial: Segunda a Sexta 8h-17h, Sábado 8h-13h
     const isWeekday = !['sábado', 'domingo'].includes(weekDay.toLowerCase());
     const isSaturday = weekDay.toLowerCase() === 'sábado';
 
-    if (isWeekday && hour >= 8 && hour < 18) {
+    if (isWeekday && hour >= 8 && hour < 17) {
       return true;
     }
 
@@ -109,7 +109,7 @@ export function getNextBusinessDay(date = new Date()) {
 
         const day = dateParts.find(p => p.type === 'day')?.value || '01';
         const month = dateParts.find(p => p.type === 'month')?.value || '01';
-        const year = dateParts.find(p => p.type === 'year')?.value || '2025';
+        const year = dateParts.find(p => p.type === 'year')?.value || String(new Date().getFullYear());
 
         return `${day}/${month}/${year}`;
       }

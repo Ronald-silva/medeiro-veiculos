@@ -1,117 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
 import logger from '../../lib/logger.js';
 
-// Estoque de veículos (fallback - quando Supabase não está disponível)
-// SINCRONIZADO com carsInventory.js - MANTER ATUALIZADO!
-// Última atualização: 02/02/2026
-const VEHICLES_INVENTORY = [
-  {
-    id: 1,
-    name: 'Honda CG 160 Start 2019',
-    price: 13500,
-    type: 'Moto',
-    year: 2019,
-    km: 'A consultar',
-    features: ['Manual', 'Gasolina', '160cc'],
-    description: 'Moto econômica e confiável'
-  },
-  {
-    id: 2,
-    name: 'VW Spacefox 2008',
-    price: 31900,
-    type: 'Sedan',
-    year: 2008,
-    km: 'A consultar',
-    features: ['Manual', 'Flex', 'Completo'],
-    description: 'Perua compacta espaçosa'
-  },
-  {
-    id: 3,
-    name: 'Kawasaki Ninja 400 2020',
-    price: 32900,
-    type: 'Moto',
-    year: 2020,
-    km: 'Baixa KM',
-    features: ['Manual', 'Gasolina', 'Esportiva'],
-    description: 'Moto esportiva 400cc'
-  },
-  // MOBI VENDIDO - Removido em 02/02/2026
-  {
-    id: 5,
-    name: 'Suzuki Grand Vitara 4x4 2014',
-    price: 65000,
-    type: 'SUV',
-    year: 2014,
-    km: 'A consultar',
-    features: ['Manual', 'Gasolina', '4x4', 'Limited Edition'],
-    description: 'SUV compacto Limited Edition 2013/2014'
-  },
-  {
-    id: 6,
-    name: 'Chevrolet Onix Plus Premier 2020',
-    price: 71900,
-    type: 'Sedan',
-    year: 2020,
-    km: 'A consultar',
-    features: ['Automático', 'Flex', 'Turbo'],
-    description: 'Sedan top de linha turbo'
-  },
-  // COROLLA VENDIDO - Removido em 03/02/2026
-  {
-    id: 8,
-    name: 'Mitsubishi L200 Triton 2015',
-    price: 95000,
-    type: 'Picape',
-    vehicleType: 'picape_aberta', // CAÇAMBA ABERTA
-    year: 2015,
-    km: 'A consultar',
-    features: ['Manual', 'Flex', '4x4', 'CAÇAMBA ABERTA'],
-    description: '✅ PICAPE COM CAÇAMBA ABERTA - ÚNICO FLEX - Para trabalho e transporte de carga'
-  },
-  {
-    id: 9,
-    name: 'Mitsubishi Pajero Full 2009',
-    price: 95000,
-    type: 'SUV',
-    year: 2009,
-    km: 'A consultar',
-    features: ['Manual', 'Diesel', '4x4', '7 lugares'],
-    description: 'SUV 7 lugares diesel'
-  },
-  {
-    id: 10,
-    name: 'Honda HR-V EXL 2018',
-    price: 105000,
-    type: 'SUV',
-    year: 2018,
-    km: 'A consultar',
-    features: ['Automático', 'Flex', 'CVT'],
-    description: 'SUV premium top de linha'
-  },
-  {
-    id: 11,
-    name: 'Ford Ranger 2014',
-    price: 115000,
-    type: 'Picape',
-    vehicleType: 'picape_aberta', // CAÇAMBA ABERTA
-    year: 2014,
-    km: 'A consultar',
-    features: ['Manual', 'Diesel', '4x4', 'CAÇAMBA ABERTA'],
-    description: '✅ PICAPE COM CAÇAMBA ABERTA - 3.2 diesel - Para trabalho e transporte de carga'
-  },
-  {
-    id: 12,
-    name: 'Toyota Hilux SW4 SRV 2012',
-    price: 135000,
-    type: 'SUV',
-    vehicleType: 'suv_fechado', // ⚠️ NÃO É PICAPE!
-    year: 2012,
-    km: 'A consultar',
-    features: ['Automático', 'Diesel', '4x4', '7 lugares', '⚠️ SUV FECHADO'],
-    description: '⚠️ ATENÇÃO: SUV FECHADO (NÃO É PICAPE!) - 7 lugares 4x4 diesel - Para família, NÃO tem caçamba'
-  }
-];
-
 /**
  * Parse orçamento do texto do cliente
  * @param {string} budget - String de orçamento (ex: "até 150 mil", "100 a 150 mil")
@@ -119,22 +8,26 @@ const VEHICLES_INVENTORY = [
  */
 function parseBudget(budget) {
   try {
-    if (budget.includes('até')) {
-      const match = budget.match(/\d+/);
+    if (!budget) return 200000;
+
+    const budgetStr = String(budget).toLowerCase();
+
+    if (budgetStr.includes('até')) {
+      const match = budgetStr.match(/\d+/);
       return match ? parseInt(match[0]) * 1000 : 150000;
     }
 
-    if (budget.includes('-') || budget.includes('a')) {
-      const matches = budget.match(/\d+/g);
+    if (budgetStr.includes('-') || budgetStr.includes('a')) {
+      const matches = budgetStr.match(/\d+/g);
       return matches && matches[1] ? parseInt(matches[1]) * 1000 : 200000;
     }
 
     // Tenta extrair um número qualquer
-    const match = budget.match(/\d+/);
+    const match = budgetStr.match(/\d+/);
     return match ? parseInt(match[0]) * 1000 : 200000;
   } catch (error) {
     logger.error('Error parsing budget:', error);
-    return 200000; // fallback padrão
+    return 200000;
   }
 }
 
@@ -142,16 +35,17 @@ function parseBudget(budget) {
  * Busca veículos no Supabase
  * @param {number} maxBudget - Orçamento máximo
  * @param {number} limit - Limite de resultados
+ * @param {Array<string>} vehicleTypes - Tipos de veículos (opcional)
  * @returns {Promise<Array|null>} Array de veículos ou null se falhar
  */
-async function fetchVehiclesFromSupabase(maxBudget, limit = 3) {
-  try {
-    if (!isSupabaseConfigured()) {
-      logger.debug('Supabase not configured, skipping database query');
-      return null;
-    }
+async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = null) {
+  if (!isSupabaseConfigured()) {
+    logger.warn('[recommend_vehicles] Supabase não configurado');
+    return null;
+  }
 
-    const { data: vehicles, error } = await supabase
+  try {
+    let query = supabase
       .from('vehicles')
       .select('*')
       .eq('status', 'available')
@@ -159,43 +53,29 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3) {
       .order('price', { ascending: false })
       .limit(limit);
 
+    // Filtrar por tipo se especificado
+    if (vehicleTypes && vehicleTypes.length > 0) {
+      query = query.in('vehicle_type', vehicleTypes);
+    }
+
+    const { data: vehicles, error } = await query;
+
     if (error) {
-      logger.error('Supabase query error:', error);
+      logger.error('[recommend_vehicles] Supabase query error:', error);
       return null;
     }
 
-    return vehicles;
+    return vehicles || [];
   } catch (error) {
-    logger.error('Error fetching vehicles from Supabase:', error);
+    logger.error('[recommend_vehicles] Error fetching from Supabase:', error);
     return null;
   }
 }
 
 /**
- * Filtra veículos do inventário local
- * @param {number} maxBudget - Orçamento máximo
- * @param {Array<string>} vehicleTypes - Tipos de veículos desejados
- * @param {number} maxResults - Máximo de resultados
- * @returns {Array} Array de veículos filtrados
- */
-function filterLocalInventory(maxBudget, vehicleTypes = [], maxResults = 2) {
-  let recommendations = VEHICLES_INVENTORY.filter(v => v.price <= maxBudget);
-
-  // Filtrar por tipo se especificado
-  if (vehicleTypes && vehicleTypes.length > 0) {
-    recommendations = recommendations.filter(v =>
-      vehicleTypes.some(type => type.toLowerCase() === v.type.toLowerCase())
-    );
-  }
-
-  // Ordenar por preço (mais caro primeiro)
-  recommendations.sort((a, b) => b.price - a.price);
-
-  return recommendations.slice(0, maxResults);
-}
-
-/**
  * Recomenda veículos baseado no perfil do cliente
+ * SEM FALLBACK LOCAL - apenas dados do Supabase (fonte única de verdade)
+ *
  * @param {object} params - Parâmetros da recomendação
  * @param {string} params.budget - Orçamento do cliente
  * @param {Array<string>} params.vehicleType - Tipos de veículos desejados
@@ -203,103 +83,122 @@ function filterLocalInventory(maxBudget, vehicleTypes = [], maxResults = 2) {
  * @returns {Promise<object>} Resultado da recomendação
  */
 export async function recommendVehicles({ budget, vehicleType, maxResults = 2 }) {
+  const timestamp = new Date().toISOString();
+
   try {
-    logger.debug('Recommending vehicles:', { budget, vehicleType, maxResults });
+    logger.debug('[recommend_vehicles] Buscando veículos:', { budget, vehicleType, maxResults });
 
     // Parse do orçamento
     const maxBudget = parseBudget(budget);
-    logger.debug(`Parsed budget: R$ ${maxBudget.toLocaleString('pt-BR')}`);
+    logger.debug(`[recommend_vehicles] Orçamento parseado: R$ ${maxBudget.toLocaleString('pt-BR')}`);
 
-    // Tenta buscar do Supabase primeiro
-    const vehiclesFromDb = await fetchVehiclesFromSupabase(maxBudget, 3);
+    // Busca do Supabase (única fonte de dados)
+    const vehiclesFromDb = await fetchVehiclesFromSupabase(maxBudget, maxResults + 1, vehicleType);
 
-    if (vehiclesFromDb && vehiclesFromDb.length > 0) {
-      const results = vehiclesFromDb.slice(0, maxResults);
-      logger.info(`Found ${vehiclesFromDb.length} vehicle(s) in database, returning ${results.length}`);
-
+    // Erro de conexão com Supabase
+    if (vehiclesFromDb === null) {
+      logger.error('[recommend_vehicles] Falha ao consultar Supabase');
       return {
-        success: true,
-        vehicles: results,
-        message: `Encontrei ${vehiclesFromDb.length} veículo(is) no seu orçamento`,
-        source: 'database'
+        success: false,
+        vehicles: [],
+        source: 'error',
+        message: 'Não consegui consultar o estoque no momento. Peça ao cliente para tentar novamente em instantes.',
+        timestamp
       };
     }
 
-    // Fallback para inventário local
-    logger.debug('Using local inventory fallback');
-    const recommendations = filterLocalInventory(maxBudget, vehicleType, maxResults);
+    // Supabase respondeu mas não encontrou veículos
+    if (vehiclesFromDb.length === 0) {
+      logger.info('[recommend_vehicles] Nenhum veículo encontrado nessa faixa');
+      return {
+        success: true,
+        vehicles: [],
+        source: 'database',
+        message: 'Nenhum veículo disponível nessa faixa de preço no momento.',
+        timestamp
+      };
+    }
 
-    logger.info(`Recommended ${recommendations.length} vehicle(s) from local inventory`);
+    // Sucesso - encontrou veículos
+    const results = vehiclesFromDb.slice(0, maxResults);
+    logger.info(`[recommend_vehicles] Encontrados ${vehiclesFromDb.length} veículo(s), retornando ${results.length}`);
 
     return {
       success: true,
-      vehicles: recommendations,
-      message: `Encontrei ${recommendations.length} veículo(is) no seu orçamento`,
-      source: 'local'
+      vehicles: results,
+      source: 'database',
+      message: `Encontrei ${results.length} veículo(s) no seu orçamento`,
+      timestamp
     };
+
   } catch (error) {
-    logger.error('Error recommending vehicles:', error);
+    logger.error('[recommend_vehicles] Erro inesperado:', error);
 
     return {
       success: false,
+      vehicles: [],
+      source: 'error',
       error: error.message,
-      message: 'Desculpe, tive um problema ao buscar os veículos. Pode tentar novamente?'
+      message: 'Não consegui consultar o estoque no momento. Peça ao cliente para tentar novamente em instantes.',
+      timestamp
     };
   }
 }
 
 /**
  * Busca um veículo específico por ID
+ * SEM FALLBACK LOCAL - apenas Supabase
+ *
  * @param {number|string} vehicleId - ID do veículo
  * @returns {Promise<object>} Resultado da busca
  */
 export async function getVehicleById(vehicleId) {
+  const timestamp = new Date().toISOString();
+
   try {
-    logger.debug(`Fetching vehicle by ID: ${vehicleId}`);
+    logger.debug(`[getVehicleById] Buscando veículo: ${vehicleId}`);
 
-    // Tenta buscar do Supabase
-    if (isSupabaseConfigured()) {
-      const { data: vehicle, error } = await supabase
-        .from('vehicles')
-        .select('*')
-        .eq('id', vehicleId)
-        .single();
-
-      if (!error && vehicle) {
-        logger.info(`Found vehicle ${vehicleId} in database`);
-        return {
-          success: true,
-          vehicle,
-          source: 'database'
-        };
-      }
-    }
-
-    // Fallback para inventário local
-    const vehicle = VEHICLES_INVENTORY.find(v => v.id === parseInt(vehicleId));
-
-    if (vehicle) {
-      logger.info(`Found vehicle ${vehicleId} in local inventory`);
+    if (!isSupabaseConfigured()) {
       return {
-        success: true,
-        vehicle,
-        source: 'local'
+        success: false,
+        error: 'Banco de dados não configurado',
+        message: 'Não consegui verificar o veículo. Tente novamente em instantes.',
+        timestamp
       };
     }
 
-    logger.warn(`Vehicle ${vehicleId} not found`);
+    const { data: vehicle, error } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('id', vehicleId)
+      .single();
+
+    if (error || !vehicle) {
+      logger.warn(`[getVehicleById] Veículo ${vehicleId} não encontrado`);
+      return {
+        success: false,
+        error: 'Veículo não encontrado',
+        message: 'Não encontrei esse veículo no estoque atual. Quer que eu busque outras opções?',
+        timestamp
+      };
+    }
+
+    logger.info(`[getVehicleById] Encontrado: ${vehicle.name}`);
     return {
-      success: false,
-      error: 'Veículo não encontrado',
-      message: 'Desculpe, não encontrei esse veículo. Quer que eu busque outros?'
+      success: true,
+      vehicle,
+      source: 'database',
+      timestamp
     };
+
   } catch (error) {
-    logger.error('Error fetching vehicle by ID:', error);
+    logger.error('[getVehicleById] Erro:', error);
 
     return {
       success: false,
       error: error.message,
-      message: 'Desculpe, tive um problema ao buscar o veículo.'
+      message: 'Não consegui verificar o veículo. Tente novamente em instantes.',
+      timestamp
     };
   }
 }

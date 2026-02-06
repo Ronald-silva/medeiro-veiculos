@@ -302,6 +302,72 @@ function validateQualificationProgress(responseText, conversationHistory = []) {
 }
 
 /**
+ * VALIDAÇÃO ANTI-ALUCINAÇÃO (MÁXIMA PRIORIDADE)
+ *
+ * Detecta se a resposta menciona veículos/preços SEM ter chamado recommend_vehicles.
+ * Esta é a primeira linha de defesa contra alucinações de estoque.
+ *
+ * @param {string} responseText - Texto da resposta da IA
+ * @param {array|null} toolResults - Resultados de tools chamadas (deve conter recommend_vehicles)
+ * @returns {ValidationResult} Resultado da validação
+ */
+function validateAntiHallucination(responseText, toolResults = null) {
+  const result = new ValidationResult()
+
+  // Padrões que indicam menção de veículos/preços
+  const vehicleMentionPatterns = [
+    /R\$\s*[\d.,]+/i,                           // Qualquer preço em R$
+    /\d+\s*mil\b/i,                              // "50 mil", "100 mil"
+    /temos?\s+(uma?|o|a)?\s*\w+/i,               // "temos um Civic", "tenho uma HR-V"
+    /(?:suv|sedan|hatch|pickup|caminhonete)/i,   // Tipos de veículo específicos
+    /(?:civic|corolla|hilux|sw4|hr-?v|onix|polo|t-?cross|creta|compass|renegade|tracker|kicks|mobi|argo|cronos|pulse|fastback|nivus|virtus|montana|amarok|ranger|s10|frontier|l200|triton|toro|strada|saveiro)/i  // Modelos comuns
+  ]
+
+  // Verifica se a resposta menciona veículos/preços
+  const mentionsVehicleOrPrice = vehicleMentionPatterns.some(pattern => pattern.test(responseText))
+
+  if (!mentionsVehicleOrPrice) {
+    // Resposta não menciona veículos/preços - OK
+    return result
+  }
+
+  // Resposta menciona veículos/preços - verifica se recommend_vehicles foi chamada
+  let recommendVehiclesCalled = false
+
+  if (toolResults) {
+    try {
+      const toolData = Array.isArray(toolResults) ? toolResults : [toolResults]
+      for (const tr of toolData) {
+        // Verifica se alguma tool é recommend_vehicles
+        if (tr.name === 'recommend_vehicles' ||
+            (tr.content && typeof tr.content === 'string' && tr.content.includes('"source":'))) {
+          recommendVehiclesCalled = true
+          break
+        }
+      }
+    } catch (e) {
+      // Erro de parse - assume que não foi chamada
+      recommendVehiclesCalled = false
+    }
+  }
+
+  if (!recommendVehiclesCalled) {
+    // ALUCINAÇÃO DETECTADA: Menciona veículo/preço sem ter consultado recommend_vehicles
+    result.addError(
+      'ALUCINAÇÃO DETECTADA: Resposta menciona veículo ou preço sem ter chamado recommend_vehicles. ' +
+      'A IA DEVE consultar recommend_vehicles ANTES de mencionar qualquer dado de estoque.'
+    )
+
+    logger.error('🚨 SUPERVISOR: Alucinação de estoque detectada!', {
+      responsePreview: responseText.substring(0, 200),
+      hadToolResults: !!toolResults
+    })
+  }
+
+  return result
+}
+
+/**
  * Função principal: Valida resposta completa
  *
  * @param {string} responseText - Texto da resposta da IA
@@ -323,7 +389,16 @@ export async function validateResponse(responseText, options = {}) {
     hasToolResults: !!toolResults
   })
 
-  // Executa todas as validações
+  // PRIMEIRA VALIDAÇÃO: Anti-alucinação (máxima prioridade)
+  const hallucinationResult = validateAntiHallucination(responseText, toolResults)
+
+  // Se detectou alucinação, retorna imediatamente com erro crítico
+  if (!hallucinationResult.isValid) {
+    logger.error('🚨 Supervisor: BLOQUEANDO resposta com alucinação')
+    return hallucinationResult
+  }
+
+  // Executa demais validações
   const inventoryResult = await validateInventoryData(responseText, toolResults)
   const qualityResult = validateResponseQuality(responseText)
   const bantResult = validateQualificationProgress(responseText, conversationHistory)
@@ -331,8 +406,8 @@ export async function validateResponse(responseText, options = {}) {
   // Combina resultados
   const finalResult = new ValidationResult()
 
-  // Merge errors
-  for (const r of [inventoryResult, qualityResult, bantResult]) {
+  // Merge errors (inclui hallucinationResult para warnings que possam existir)
+  for (const r of [hallucinationResult, inventoryResult, qualityResult, bantResult]) {
     finalResult.errors.push(...r.errors)
     finalResult.warnings.push(...r.warnings)
     finalResult.suggestions.push(...r.suggestions)

@@ -250,9 +250,6 @@ export default function CatalogPage() {
                       {car.year}
                     </span>
                     <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                      {car.mileage}
-                    </span>
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                       {car.fuel}
                     </span>
                   </div>
@@ -366,14 +363,10 @@ export default function CatalogPage() {
               </div>
 
               {/* Basic Info */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-gray-600">Ano</p>
                   <p className="text-lg font-semibold text-gray-900">{selectedCar.year}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">Km</p>
-                  <p className="text-lg font-semibold text-gray-900">{selectedCar.mileage}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Cor</p>

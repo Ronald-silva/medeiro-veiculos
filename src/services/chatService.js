@@ -1,4 +1,5 @@
 // Serviço para comunicação com a API de chat
+import { STORE_INFO } from '../agent/config/store-info.js'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -37,7 +38,7 @@ export async function sendMessage(message, conversationId = null, context = {}) 
     return {
       success: false,
       error: error.message,
-      message: 'Desculpe, ocorreu um erro. Por favor, tente novamente ou entre em contato pelo WhatsApp: (85) 98885-2900'
+      message: `Desculpe, ocorreu um erro. Por favor, tente novamente ou entre em contato pelo WhatsApp: ${STORE_INFO.phoneFormatted}`
     };
   }
 }

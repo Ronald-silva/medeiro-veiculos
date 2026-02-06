@@ -21,6 +21,9 @@ import {
   markConversationAsAppointment
 } from '../../src/lib/conversationHistory.js'
 
+// Importa supervisor de validação (anti-alucinação)
+import { validateResponse, logValidation } from '../../src/lib/supervisor.js'
+
 // Cliente Anthropic
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -34,22 +37,79 @@ const twilioClient = twilio(
 
 const CONFIG = {
   model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 800, // Reduzido para respostas mais rápidas
-  temperature: 0.7,  // Balanceado entre criatividade e consistência
-  historyLimit: 15,  // Histórico otimizado para velocidade
-  typingDelay: 1500  // Delay mínimo para simular digitação humana (ms)
+  maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
+  temperature: 0.3,  // Baixa para respostas mais consistentes e evitar alucinações
+  historyLimit: 15   // Histórico completo para contexto
 }
 
 /**
- * Detecta se a mensagem é simples (saudação, confirmação, etc.)
- * Mensagens simples podem usar modelo mais rápido
+ * CACHE DE RESPOSTAS INSTANTÂNEAS
+ * Saudações comuns não precisam de IA - resposta em <100ms
  */
-function isSimpleMessage(message) {
-  const simplePatterns = [
-    /^(oi|olá|ola|hey|eae|e aí|bom dia|boa tarde|boa noite|blz|ok|sim|não|nao)[\s!?.]*$/i,
-    /^(tudo bem|td bem|tdb|como vai|beleza)[\s!?.]*$/i
-  ]
-  return simplePatterns.some(pattern => pattern.test(message.trim()))
+const INSTANT_RESPONSES = {
+  greetings: {
+    patterns: [/^(oi|olá|ola|hey|eae|e aí)[\s!?.]*$/i, /^(bom dia|boa tarde|boa noite)[\s!?.]*$/i],
+    responses: [
+      'Oi! 😊 Aqui é a Camila da Medeiros Veículos! Como posso te ajudar hoje?',
+      'Olá! 😊 Sou a Camila, consultora da Medeiros Veículos. Em que posso ajudar?',
+      'Oi! Tudo bem? 😊 Sou a Camila! Está procurando algum veículo específico?'
+    ]
+  },
+  howAreYou: {
+    patterns: [/^(tudo bem|td bem|tdb|como vai|beleza|blz)[\s!?.]*$/i],
+    responses: [
+      'Tudo ótimo! 😊 E você? Em que posso te ajudar hoje?',
+      'Tudo bem sim! 😊 Como posso te ajudar?',
+      'Bem demais! 😊 Procurando algum carro ou moto?'
+    ]
+  }
+}
+
+/**
+ * Verifica se tem resposta instantânea (sem IA)
+ * Retorna a resposta ou null se precisar de IA
+ */
+function getInstantResponse(message) {
+  const msg = message.trim().toLowerCase()
+
+  for (const [type, config] of Object.entries(INSTANT_RESPONSES)) {
+    if (config.patterns.some(p => p.test(msg))) {
+      const responses = config.responses
+      return responses[Math.floor(Math.random() * responses.length)]
+    }
+  }
+  return null
+}
+
+/**
+ * Persiste mensagens no Supabase em background (fire & forget)
+ * Não bloqueia a resposta ao usuário
+ */
+async function persistToSupabase(phone, userMessage, assistantMessage, responseTimeMs, toolCalled) {
+  try {
+    const dbConversationId = await getOrCreateConversation(phone)
+    if (!dbConversationId) return
+
+    // Salva ambas em paralelo
+    await Promise.all([
+      saveMessage({
+        conversationId: dbConversationId,
+        role: 'user',
+        content: userMessage
+      }),
+      saveMessage({
+        conversationId: dbConversationId,
+        role: 'assistant',
+        content: assistantMessage,
+        responseTimeMs,
+        toolName: toolCalled || null
+      })
+    ])
+
+    logger.debug('[Twilio] Persisted to Supabase in background')
+  } catch (error) {
+    logger.error('[Twilio] Supabase persist error:', error)
+  }
 }
 
 /**
@@ -79,23 +139,28 @@ function getClosingResponse() {
 
 /**
  * Processa mensagem com a Camila
- * @param {string} userMessage - Mensagem do usuário
- * @param {string} conversationId - ID da conversa
- * @param {Object} clientInfo - Informações do cliente (opcional)
- * @param {string} clientInfo.phone - Telefone do cliente
- * @param {string} clientInfo.name - Nome do cliente
+ * OTIMIZADO PARA VELOCIDADE
  */
 async function processCamilaMessage(userMessage, conversationId, clientInfo = {}) {
   try {
-    // Detecta mensagem de encerramento - resposta rápida e contextual
+    // ============================================
+    // 1. RESPOSTA INSTANTÂNEA (sem IA) - <100ms
+    // ============================================
+    const instantResponse = getInstantResponse(userMessage)
+    if (instantResponse) {
+      logger.info('[Twilio] INSTANT response (no AI)', { responseTime: '<100ms' })
+      return instantResponse
+    }
+
+    // Detecta mensagem de encerramento - resposta rápida
     if (isClosingMessage(userMessage)) {
-      logger.info('[Twilio] Closing message detected, using quick response')
+      logger.info('[Twilio] Closing message, quick response')
       return getClosingResponse()
     }
 
-    // Detecta complexidade da mensagem para otimizar modelo
-    const useQuickModel = isSimpleMessage(userMessage)
-    const selectedModel = useQuickModel ? 'claude-3-5-haiku-20241022' : CONFIG.model
+    // Usa modelo configurado
+    const selectedModel = CONFIG.model
+    const maxTokens = CONFIG.maxTokens
 
     // Busca histórico da conversa
     const history = await getConversation(conversationId)
@@ -116,19 +181,16 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
     logger.info('[Twilio] Processing with Camila:', {
       conversationId,
-      historyLength: history.length,
-      messagePreview: userMessage.substring(0, 100)
+      historyLength: history.length
     })
 
     // Converte tools para formato Claude usando handler compartilhado
     const claudeTools = convertToolsForClaude(TOOL_DEFINITIONS)
 
-    logger.info(`[Twilio] Using model: ${selectedModel} (quick: ${useQuickModel})`)
-
     // Chama Claude com tools
     const response = await anthropic.messages.create({
       model: selectedModel,
-      max_tokens: useQuickModel ? 400 : CONFIG.maxTokens,
+      max_tokens: maxTokens,
       temperature: CONFIG.temperature,
       system: AGENT_SYSTEM_PROMPT,
       messages: messages,
@@ -165,7 +227,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
         const finalResponse = await anthropic.messages.create({
           model: selectedModel,
-          max_tokens: CONFIG.maxTokens,
+          max_tokens: maxTokens,
           temperature: CONFIG.temperature,
           system: AGENT_SYSTEM_PROMPT,
           messages: messagesWithToolResult,
@@ -182,78 +244,38 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
       assistantMessage = textBlock?.text || response.content[0].text
     }
 
-    // Salva no histórico Redis (memória de curto prazo)
+    // ============================================
+    // 3. SALVAR E RETORNAR IMEDIATAMENTE
+    // ============================================
+
+    // Salva no Redis (rápido) e retorna resposta
     const updatedHistory = [
       ...history,
       { role: 'user', content: userMessage, timestamp: new Date().toISOString() },
       { role: 'assistant', content: assistantMessage, timestamp: new Date().toISOString() }
     ]
 
+    // Redis é rápido - aguarda para garantir histórico
     await saveConversation(conversationId, updatedHistory.slice(-CONFIG.historyLimit), 86400)
 
-    // === PERSISTÊNCIA NO SUPABASE (histórico permanente) ===
-    const processingEndTime = Date.now()
-    const responseTimeMs = processingEndTime - (clientInfo._startTime || processingEndTime)
+    // ============================================
+    // 4. PERSISTÊNCIA SUPABASE EM BACKGROUND (fire & forget)
+    // ============================================
+    const responseTimeMs = Date.now() - (clientInfo._startTime || Date.now())
 
-    // Busca ou cria conversa no Supabase
-    const dbConversationId = await getOrCreateConversation(clientInfo.phone)
+    // Não aguarda - salva em background
+    persistToSupabase(clientInfo.phone, userMessage, assistantMessage, responseTimeMs, toolCalled)
+      .catch(err => logger.error('[Twilio] Background persist error:', err))
 
-    if (dbConversationId) {
-      // Salva mensagem do usuário
-      await saveMessage({
-        conversationId: dbConversationId,
-        role: 'user',
-        content: userMessage
-      })
-
-      // Salva resposta da Camila
-      await saveMessage({
-        conversationId: dbConversationId,
-        role: 'assistant',
-        content: assistantMessage,
-        responseTimeMs,
-        toolName: toolCalled || null
-      })
-
-      logger.debug('[Twilio] Messages persisted to Supabase:', { dbConversationId })
-    }
-
-    if (toolCalled) {
-      logger.info(`[Twilio] Camila response with tool: ${toolCalled}`, {
-        messagePreview: assistantMessage.substring(0, 100)
-      })
-    } else {
-      logger.info('[Twilio] Camila response generated:', {
-        messagePreview: assistantMessage.substring(0, 100)
-      })
-    }
+    logger.info(`[Twilio] Response ready in ${responseTimeMs}ms`, {
+      model: selectedModel,
+      tool: toolCalled || 'none'
+    })
 
     return assistantMessage
   } catch (error) {
     logger.error('[Twilio] Error processing with Camila:', error)
     throw error
-  }
-}
-
-/**
- * Simula indicador de "digitando" com delay humanizado
- * Envia feedback imediato ao usuário
- */
-async function simulateTyping(to, processingTime = CONFIG.typingDelay) {
-  // Delay humanizado baseado no tamanho esperado da resposta
-  const humanDelay = Math.min(processingTime, 2000)
-  await new Promise(resolve => setTimeout(resolve, humanDelay))
-}
-
-/**
- * Envia reação de "lido" imediatamente (feedback visual)
- */
-async function sendReadReceipt(to) {
-  try {
-    // Twilio não tem "read receipt" nativo, mas podemos logar
-    logger.info('[Twilio] Message received, processing...', { to })
-  } catch (error) {
-    logger.warn('[Twilio] Could not send read receipt:', error)
   }
 }
 
@@ -278,11 +300,7 @@ async function sendTwilioMessage(to, message) {
       ? to
       : `whatsapp:${to}`
 
-    logger.info('[Twilio] Sending message:', {
-      from: fromNumber,
-      to: toNumber,
-      messagePreview: message.substring(0, 100)
-    })
+    logger.info('[Twilio] Sending message via Twilio API')
 
     const result = await twilioClient.messages.create({
       from: fromNumber,
@@ -332,11 +350,8 @@ function extractTwilioData(body) {
     const phoneNumber = From.replace('whatsapp:', '')
     const pushName = ProfileName || 'Cliente'
 
-    logger.info('[Twilio] Extracted webhook data:', {
-      phoneNumber: phoneNumber.substring(0, 10) + '...',
-      pushName,
-      messagePreview: Body.substring(0, 50)
-    })
+    // Log sem dados sensíveis do cliente
+    logger.debug('[Twilio] Webhook data extracted successfully')
 
     return { phoneNumber, message: Body, pushName }
   } catch (error) {
@@ -354,21 +369,42 @@ async function processMessageAsync(webhookData) {
   const startTime = Date.now()
 
   try {
-    logger.info('[Twilio] ASYNC processing started:', {
-      pushName,
-      phonePreview: phoneNumber.substring(0, 10) + '...',
-      messagePreview: message.substring(0, 100)
-    })
+    logger.info('[Twilio] ASYNC processing started')
 
     // ID da conversa = número do WhatsApp
     const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
 
     // Processa com Camila
-    const camilaResponse = await processCamilaMessage(message, conversationId, {
+    let camilaResponse = await processCamilaMessage(message, conversationId, {
       phone: phoneNumber,
       name: pushName,
       _startTime: startTime
     })
+
+    // === SUPERVISOR: Valida resposta ANTES de enviar ===
+    try {
+      const validation = await validateResponse(camilaResponse, {
+        toolResults: null, // processCamilaMessage não retorna toolResults
+        conversationHistory: []
+      })
+
+      // 🚨 BLOQUEIO DE ALUCINAÇÃO
+      if (!validation.isValid) {
+        const isHallucination = validation.errors.some(e => e.includes('ALUCINAÇÃO'))
+
+        if (isHallucination) {
+          logger.error('🚨 [Twilio] SUPERVISOR: Bloqueando resposta com alucinação')
+
+          // Substitui por resposta segura
+          camilaResponse = 'Deixa eu verificar o que temos no estoque pra você! Me conta: qual tipo de carro você procura e qual seu orçamento?'
+
+          // Loga para análise
+          await logValidation(conversationId, validation, camilaResponse)
+        }
+      }
+    } catch (validationError) {
+      logger.warn('[Twilio] Supervisor validation error:', validationError.message)
+    }
 
     // Calcula tempo de processamento
     const processingTime = Date.now() - startTime
@@ -418,8 +454,27 @@ export default async function handler(req, res) {
   const webhookReceivedAt = Date.now()
 
   try {
+    // Valida assinatura do Twilio (segurança contra requests falsos)
+    const twilioSignature = req.headers['x-twilio-signature']
+    const webhookUrl = process.env.TWILIO_WEBHOOK_URL || `https://${req.headers.host}${req.url}`
+
+    if (process.env.NODE_ENV === 'production' && process.env.TWILIO_AUTH_TOKEN) {
+      const isValid = twilio.validateRequest(
+        process.env.TWILIO_AUTH_TOKEN,
+        twilioSignature,
+        webhookUrl,
+        req.body
+      )
+
+      if (!isValid) {
+        logger.warn('[Twilio] Invalid webhook signature - rejecting request')
+        return res.status(403).send('Forbidden')
+      }
+    }
+
+    // Log seguro (sem dados sensíveis do cliente)
     logger.info('[Twilio] WEBHOOK RECEIVED:', {
-      body: req.body,
+      hasBody: !!req.body,
       contentType: req.headers['content-type']
     })
 

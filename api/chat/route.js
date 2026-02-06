@@ -8,14 +8,9 @@ import { withCircuitBreaker } from '../../src/lib/circuit-breaker.js'
 import { captureException } from '../../src/lib/sentry.js'
 import logger from '../../src/lib/logger.js'
 
-// Importa handlers compartilhados
+// Importa handlers compartilhados (apenas os usados)
 import {
-  handleFunctionCall,
   convertToolsForClaude,
-  convertToolsForOpenAI,
-  extractTextFromAIResponse,
-  hasToolUse,
-  extractToolUses,
   processClaudeToolUses,
   processOpenAIToolCalls
 } from '../../src/api/handlers/index.js'
@@ -61,17 +56,17 @@ const openai = USE_OPENAI ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 }) : null
 
-// Configuração
+// Configuração - OTIMIZADO PARA EVITAR ALUCINAÇÕES
 const CONFIG = {
   anthropic: {
     model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
-    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 256,
-    temperature: 0.7
+    maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
+    temperature: 0.3  // Baixa para respostas mais consistentes e factuais
   },
   openai: {
     model: process.env.OPENAI_MODEL || 'gpt-4o',
     maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS) || 800,
-    temperature: 0.7
+    temperature: 0.3  // Baixa para respostas mais consistentes e factuais
   }
 }
 
@@ -270,9 +265,6 @@ async function chatWithOpenAI(messages, convId) {
   }
 }
 
-// Cache de conversas (fallback se Upstash não configurado)
-const conversationCache = new Map()
-
 // Endpoint POST principal
 export async function POST(request) {
   try {
@@ -408,6 +400,25 @@ export async function POST(request) {
         autoCorrect: true
       })
 
+      // 🚨 BLOQUEIO DE ALUCINAÇÃO: Se detectou alucinação, substitui resposta
+      if (!validation.isValid) {
+        const isHallucination = validation.errors.some(e => e.includes('ALUCINAÇÃO'))
+
+        if (isHallucination) {
+          logger.error('🚨 SUPERVISOR: Bloqueando resposta com alucinação de estoque')
+
+          // Substitui por resposta segura
+          result.message = 'Deixa eu verificar o que temos no estoque pra você! Me conta: qual tipo de carro você procura e qual seu orçamento?'
+          result.hallucinationBlocked = true
+
+          // Loga para análise
+          await logValidation(convId, validation, result.message)
+        } else {
+          // Outros erros (não alucinação) - apenas avisa
+          logger.warn('Supervisor: resposta com erros (não-alucinação)', validation.errors)
+        }
+      }
+
       // Se houver correções de preço, aplica
       if (validation.corrections.length > 0) {
         result.message = applyCorrections(result.message, validation.corrections)
@@ -422,10 +433,6 @@ export async function POST(request) {
         isValid: validation.isValid,
         errors: validation.errors,
         warnings: validation.warnings
-      }
-
-      if (!validation.isValid) {
-        logger.warn('Supervisor: resposta enviada com erros', validation.errors)
       }
     } catch (validationError) {
       // Não bloqueia se validação falhar
@@ -512,7 +519,7 @@ export async function GET() {
       service: 'chat-api',
       supabase: supabaseStatus,
       aiProvider,
-      conversationsInCache: conversationCache.size,
+      upstash: isUpstashConfigured() ? 'configured' : 'not configured',
       timestamp: new Date().toISOString()
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
