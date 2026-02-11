@@ -138,6 +138,42 @@ function getClosingResponse() {
 }
 
 /**
+ * Extrai URLs de imagens dos veículos retornados por recommend_vehicles
+ */
+function extractVehicleImages(toolUses, toolResults) {
+  const images = []
+
+  for (let i = 0; i < toolUses.length; i++) {
+    if (toolUses[i].name !== 'recommend_vehicles') continue
+
+    try {
+      const result = toolResults[i]
+      if (!result?.content) continue
+
+      const parsed = JSON.parse(result.content)
+      if (!parsed.vehicles || !Array.isArray(parsed.vehicles)) continue
+
+      for (const vehicle of parsed.vehicles) {
+        // Pega a imagem principal ou a primeira do array
+        const imageUrl = vehicle.main_image_url ||
+          (Array.isArray(vehicle.images) && vehicle.images[0])
+
+        if (imageUrl && imageUrl.startsWith('http')) {
+          images.push({
+            url: imageUrl,
+            caption: `${vehicle.name} - R$ ${Number(vehicle.price).toLocaleString('pt-BR')}`
+          })
+        }
+      }
+    } catch (e) {
+      logger.debug('[Twilio] Error extracting vehicle images:', e.message)
+    }
+  }
+
+  return images
+}
+
+/**
  * Processa mensagem com a Camila
  * OTIMIZADO PARA VELOCIDADE
  */
@@ -149,13 +185,13 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
     const instantResponse = getInstantResponse(userMessage)
     if (instantResponse) {
       logger.info('[Twilio] INSTANT response (no AI)', { responseTime: '<100ms' })
-      return instantResponse
+      return { message: instantResponse, vehicleImages: [] }
     }
 
     // Detecta mensagem de encerramento - resposta rápida
     if (isClosingMessage(userMessage)) {
       logger.info('[Twilio] Closing message, quick response')
-      return getClosingResponse()
+      return { message: getClosingResponse(), vehicleImages: [] }
     }
 
     // Usa modelo configurado
@@ -199,6 +235,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
     let assistantMessage
     let toolCalled = null
+    let vehicleImages = []
 
     // Se Claude quis usar tool(s)
     if (response.stop_reason === 'tool_use') {
@@ -209,6 +246,9 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
         // Processa TODAS as tools usando handler compartilhado
         const toolResults = await processClaudeToolUses(toolUses, conversationId)
+
+        // Extrai imagens de veículos se recommend_vehicles foi chamada
+        vehicleImages = extractVehicleImages(toolUses, toolResults)
 
         // Chama Claude novamente com TODOS os resultados
         const messagesWithToolResult = [
@@ -272,7 +312,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
       tool: toolCalled || 'none'
     })
 
-    return assistantMessage
+    return { message: assistantMessage, vehicleImages }
   } catch (error) {
     logger.error('[Twilio] Error processing with Camila:', error)
     throw error
@@ -282,7 +322,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 /**
  * Envia mensagem via Twilio WhatsApp
  */
-async function sendTwilioMessage(to, message) {
+async function sendTwilioMessage(to, message, mediaUrl = null) {
   try {
     const twilioNumber = process.env.TWILIO_WHATSAPP_NUMBER
 
@@ -300,13 +340,20 @@ async function sendTwilioMessage(to, message) {
       ? to
       : `whatsapp:${to}`
 
-    logger.info('[Twilio] Sending message via Twilio API')
+    logger.info('[Twilio] Sending message via Twilio API', { hasMedia: !!mediaUrl })
 
-    const result = await twilioClient.messages.create({
+    const msgConfig = {
       from: fromNumber,
       to: toNumber,
       body: message
-    })
+    }
+
+    // Adiciona mídia se fornecida
+    if (mediaUrl) {
+      msgConfig.mediaUrl = [mediaUrl]
+    }
+
+    const result = await twilioClient.messages.create(msgConfig)
 
     logger.info('[Twilio] Message sent successfully:', {
       sid: result.sid,
@@ -415,7 +462,7 @@ async function processMessageAsync(webhookData) {
     const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
 
     // Processa com Camila
-    const camilaResponse = await processCamilaMessage(message, conversationId, {
+    const camilaResult = await processCamilaMessage(message, conversationId, {
       phone: phoneNumber,
       name: pushName,
       _startTime: startTime
@@ -425,11 +472,25 @@ async function processMessageAsync(webhookData) {
     const processingTime = Date.now() - startTime
     logger.info(`[Twilio] ASYNC processing completed in ${processingTime}ms`)
 
-    // Envia resposta via Twilio API
-    await sendTwilioMessage(phoneNumber, camilaResponse)
+    // Envia resposta de texto via Twilio API
+    await sendTwilioMessage(phoneNumber, camilaResult.message)
+
+    // Envia imagens de veículos (se houver)
+    if (camilaResult.vehicleImages && camilaResult.vehicleImages.length > 0) {
+      logger.info(`[Twilio] Sending ${camilaResult.vehicleImages.length} vehicle image(s)`)
+
+      for (const img of camilaResult.vehicleImages) {
+        try {
+          await sendTwilioMessage(phoneNumber, img.caption, img.url)
+        } catch (imgError) {
+          logger.warn(`[Twilio] Failed to send vehicle image: ${imgError.message}`)
+        }
+      }
+    }
 
     logger.info('[Twilio] Response sent successfully', {
-      totalTime: Date.now() - startTime
+      totalTime: Date.now() - startTime,
+      imagesSent: camilaResult.vehicleImages?.length || 0
     })
 
   } catch (error) {
