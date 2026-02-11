@@ -21,9 +21,6 @@ import {
   markConversationAsAppointment
 } from '../../src/lib/conversationHistory.js'
 
-// Importa supervisor de validação (anti-alucinação)
-import { validateResponse, logValidation } from '../../src/lib/supervisor.js'
-
 // Cliente Anthropic
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -149,13 +146,13 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
     const instantResponse = getInstantResponse(userMessage)
     if (instantResponse) {
       logger.info('[Twilio] INSTANT response (no AI)', { responseTime: '<100ms' })
-      return { message: instantResponse, toolResults: null, toolCalled: null }
+      return instantResponse
     }
 
     // Detecta mensagem de encerramento - resposta rápida
     if (isClosingMessage(userMessage)) {
       logger.info('[Twilio] Closing message, quick response')
-      return { message: getClosingResponse(), toolResults: null, toolCalled: null }
+      return getClosingResponse()
     }
 
     // Usa modelo configurado
@@ -199,7 +196,6 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
     let assistantMessage
     let toolCalled = null
-    let toolResultsForValidation = null
 
     // Se Claude quis usar tool(s)
     if (response.stop_reason === 'tool_use') {
@@ -210,9 +206,6 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
         // Processa TODAS as tools usando handler compartilhado
         const toolResults = await processClaudeToolUses(toolUses, conversationId)
-
-        // Guarda para validação do supervisor (com nomes das tools)
-        toolResultsForValidation = toolUses.map(t => ({ name: t.name, input: t.input }))
 
         // Chama Claude novamente com TODOS os resultados
         const messagesWithToolResult = [
@@ -276,7 +269,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
       tool: toolCalled || 'none'
     })
 
-    return { message: assistantMessage, toolResults: toolResultsForValidation, toolCalled }
+    return assistantMessage
   } catch (error) {
     logger.error('[Twilio] Error processing with Camila:', error)
     throw error
@@ -379,38 +372,11 @@ async function processMessageAsync(webhookData) {
     const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
 
     // Processa com Camila
-    const camilaResult = await processCamilaMessage(message, conversationId, {
+    const camilaResponse = await processCamilaMessage(message, conversationId, {
       phone: phoneNumber,
       name: pushName,
       _startTime: startTime
     })
-
-    let camilaResponse = camilaResult.message
-
-    // === SUPERVISOR: Valida resposta ANTES de enviar ===
-    try {
-      const validation = await validateResponse(camilaResponse, {
-        toolResults: camilaResult.toolResults,
-        conversationHistory: []
-      })
-
-      // 🚨 BLOQUEIO DE ALUCINAÇÃO (só se NÃO chamou recommend_vehicles)
-      if (!validation.isValid) {
-        const isHallucination = validation.errors.some(e => e.includes('ALUCINAÇÃO'))
-
-        if (isHallucination) {
-          logger.error('🚨 [Twilio] SUPERVISOR: Bloqueando resposta com alucinação')
-
-          // Substitui por resposta segura
-          camilaResponse = 'Deixa eu verificar o que temos no estoque pra você! Me conta: qual tipo de carro você procura e qual seu orçamento?'
-
-          // Loga para análise
-          await logValidation(conversationId, validation, camilaResponse)
-        }
-      }
-    } catch (validationError) {
-      logger.warn('[Twilio] Supervisor validation error:', validationError.message)
-    }
 
     // Calcula tempo de processamento
     const processingTime = Date.now() - startTime
