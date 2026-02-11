@@ -314,17 +314,22 @@ function validateQualificationProgress(responseText, conversationHistory = []) {
 function validateAntiHallucination(responseText, toolResults = null) {
   const result = new ValidationResult()
 
-  // Padrões que indicam menção de veículos/preços
-  const vehicleMentionPatterns = [
+  // Padrões de PREÇO (indicam dados de estoque específicos)
+  const pricePatterns = [
     /R\$\s*[\d.,]+/i,                           // Qualquer preço em R$
-    /\d+\s*mil\b/i,                              // "50 mil", "100 mil"
-    /temos?\s+(uma?|o|a)?\s*\w+/i,               // "temos um Civic", "tenho uma HR-V"
-    /(?:suv|sedan|hatch|pickup|caminhonete)/i,   // Tipos de veículo específicos
-    /(?:civic|corolla|hilux|sw4|hr-?v|onix|polo|t-?cross|creta|compass|renegade|tracker|kicks|mobi|argo|cronos|pulse|fastback|nivus|virtus|montana|amarok|ranger|s10|frontier|l200|triton|toro|strada|saveiro)/i  // Modelos comuns
+    /\d+\s*mil\b/i                               // "50 mil", "100 mil"
   ]
 
-  // Verifica se a resposta menciona veículos/preços
-  const mentionsVehicleOrPrice = vehicleMentionPatterns.some(pattern => pattern.test(responseText))
+  // Padrões de MODELO ESPECÍFICO (veículos reais)
+  const vehicleModelPatterns = [
+    /(?:civic|corolla|hilux|sw4|hr-?v|onix|polo|t-?cross|creta|compass|renegade|tracker|kicks|mobi|argo|cronos|pulse|fastback|nivus|virtus|montana|amarok|ranger|s10|frontier|l200|triton|toro|strada|saveiro)/i
+  ]
+
+  // ALUCINAÇÃO = mencionar PREÇO + MODELO JUNTOS sem ter consultado estoque
+  // Apenas mencionar tipos (SUV, sedan) ou "temos" em conversa normal é OK
+  const mentionsPrice = pricePatterns.some(pattern => pattern.test(responseText))
+  const mentionsSpecificModel = vehicleModelPatterns.some(pattern => pattern.test(responseText))
+  const mentionsVehicleOrPrice = mentionsPrice && mentionsSpecificModel
 
   if (!mentionsVehicleOrPrice) {
     // Resposta não menciona veículos/preços - OK
