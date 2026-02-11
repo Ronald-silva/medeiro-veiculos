@@ -9,6 +9,7 @@ import { convertBrazilianDateToISO } from '../utils/dateTime.js';
 import { trackFunnelEvent } from '../../lib/analytics.js';
 import { markConversationAsAppointment } from '../../lib/conversationHistory.js';
 import { processSuccessfulConversation, saveSuccessfulConversation } from '../../lib/embeddings.js';
+import { trackAppointmentScheduled } from '../../lib/facebookCAPI.js';
 import { STORE_INFO } from '../../agent/config/store-info.js';
 import logger from '../../lib/logger.js';
 
@@ -522,6 +523,15 @@ export async function scheduleVisit(params) {
         visitType: appointmentData.visit_type,
         scheduledDate: appointmentData.scheduled_date
       });
+
+      // 6.1 Facebook CAPI: Envia evento de agendamento
+      trackAppointmentScheduled({
+        leadId,
+        name: params.customerName,
+        phone: params.phone,
+        vehicleInterest: params.vehicleInterest,
+        appointmentId: dbResult.appointmentId
+      }).catch(err => logger.warn('[CAPI] Erro ao enviar agendamento:', err.message))
 
       // 7. LEARNING SYSTEM: Marca conversa como sucesso e salva para aprendizado
       try {

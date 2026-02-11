@@ -7,6 +7,7 @@
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient.js';
 import { calculateLeadScore } from '../../agent/scoring/calculator.js';
 import { trackFunnelEvent } from '../../lib/analytics.js';
+import { trackLeadQualified } from '../../lib/facebookCAPI.js';
 import logger from '../../lib/logger.js';
 
 /**
@@ -244,6 +245,19 @@ export async function saveLead(leadData) {
         temperature,
         budget: parseOrcamento(leadData.orcamento)
       });
+
+      // Facebook CAPI: Envia evento de lead qualificado (score >= 70)
+      if (score >= 70) {
+        trackLeadQualified({
+          leadId,
+          name: leadData.nome,
+          phone: leadData.whatsapp,
+          email: leadData.email,
+          score,
+          budget: parseOrcamento(leadData.orcamento),
+          vehicleType: leadData.tipoCarro
+        }).catch(err => logger.warn('[CAPI] Erro ao enviar lead qualificado:', err.message))
+      }
 
       // Mensagem baseada no score
       let message;

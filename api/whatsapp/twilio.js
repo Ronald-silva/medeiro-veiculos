@@ -149,13 +149,13 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
     const instantResponse = getInstantResponse(userMessage)
     if (instantResponse) {
       logger.info('[Twilio] INSTANT response (no AI)', { responseTime: '<100ms' })
-      return instantResponse
+      return { message: instantResponse, toolResults: null, toolCalled: null }
     }
 
     // Detecta mensagem de encerramento - resposta rápida
     if (isClosingMessage(userMessage)) {
       logger.info('[Twilio] Closing message, quick response')
-      return getClosingResponse()
+      return { message: getClosingResponse(), toolResults: null, toolCalled: null }
     }
 
     // Usa modelo configurado
@@ -199,6 +199,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
     let assistantMessage
     let toolCalled = null
+    let toolResultsForValidation = null
 
     // Se Claude quis usar tool(s)
     if (response.stop_reason === 'tool_use') {
@@ -209,6 +210,9 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
 
         // Processa TODAS as tools usando handler compartilhado
         const toolResults = await processClaudeToolUses(toolUses, conversationId)
+
+        // Guarda para validação do supervisor (com nomes das tools)
+        toolResultsForValidation = toolUses.map(t => ({ name: t.name, input: t.input }))
 
         // Chama Claude novamente com TODOS os resultados
         const messagesWithToolResult = [
@@ -272,7 +276,7 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
       tool: toolCalled || 'none'
     })
 
-    return assistantMessage
+    return { message: assistantMessage, toolResults: toolResultsForValidation, toolCalled }
   } catch (error) {
     logger.error('[Twilio] Error processing with Camila:', error)
     throw error
@@ -375,20 +379,22 @@ async function processMessageAsync(webhookData) {
     const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
 
     // Processa com Camila
-    let camilaResponse = await processCamilaMessage(message, conversationId, {
+    const camilaResult = await processCamilaMessage(message, conversationId, {
       phone: phoneNumber,
       name: pushName,
       _startTime: startTime
     })
 
+    let camilaResponse = camilaResult.message
+
     // === SUPERVISOR: Valida resposta ANTES de enviar ===
     try {
       const validation = await validateResponse(camilaResponse, {
-        toolResults: null, // processCamilaMessage não retorna toolResults
+        toolResults: camilaResult.toolResults,
         conversationHistory: []
       })
 
-      // 🚨 BLOQUEIO DE ALUCINAÇÃO
+      // 🚨 BLOQUEIO DE ALUCINAÇÃO (só se NÃO chamou recommend_vehicles)
       if (!validation.isValid) {
         const isHallucination = validation.errors.some(e => e.includes('ALUCINAÇÃO'))
 

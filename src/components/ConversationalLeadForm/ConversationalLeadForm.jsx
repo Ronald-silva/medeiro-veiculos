@@ -11,6 +11,7 @@ import {
   saveMessageToLocal,
   generateConversationId
 } from '../../services/chatService'
+import { getPixelEventData } from '../../lib/utmTracking'
 
 export default function ConversationalLeadForm({ isOpen, onClose, initialContext = {} }) {
   const [messages, setMessages] = useState([])
@@ -20,13 +21,14 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
 
-  // Dispara evento do Facebook Pixel quando abre o chat
+  // Dispara evento do Facebook Pixel quando abre o chat (com dados UTM)
   useEffect(() => {
     if (isOpen && typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'InitiateCheckout', {
-        content_name: initialContext?.vehicle || 'Chat Geral',
-        content_category: 'Lead'
+      const eventData = getPixelEventData({
+        vehicle: initialContext?.vehicle,
+        category: 'Lead'
       })
+      window.fbq('track', 'InitiateCheckout', eventData)
     }
   }, [isOpen, initialContext])
 
@@ -70,13 +72,14 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
   const handleSendMessage = async (messageText) => {
     if (!messageText.trim() || !conversationId) return
 
-    // Dispara evento Lead no Facebook Pixel na primeira mensagem
+    // Dispara evento Lead no Facebook Pixel na primeira mensagem (com UTM)
     const isFirstUserMessage = messages.filter(m => m.role === 'user').length === 0
     if (isFirstUserMessage && typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'Lead', {
-        content_name: initialContext?.vehicle || 'Chat Geral',
-        content_category: 'Interesse'
+      const leadEventData = getPixelEventData({
+        vehicle: initialContext?.vehicle,
+        category: 'Interesse'
       })
+      window.fbq('track', 'Lead', leadEventData)
     }
 
     // Limpa quick replies após primeira interação
