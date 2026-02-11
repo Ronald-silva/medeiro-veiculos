@@ -14,6 +14,9 @@ import {
 // Importa utilidades
 import { getDateTimeContext } from '../../src/api/utils/index.js'
 
+// Importa transcrição de áudio
+import { transcribeAudio } from './audioTranscriber.js'
+
 // Importa sistema de histórico de conversas
 import {
   getOrCreateConversation,
@@ -333,13 +336,10 @@ function extractTwilioData(body) {
     //   ...
     // }
 
-    const { From, Body, ProfileName, WaId } = body
+    const { From, Body, ProfileName, WaId, NumMedia, MediaUrl0, MediaContentType0 } = body
 
-    if (!From || !Body) {
-      logger.warn('[Twilio] Missing required fields:', {
-        hasFrom: !!From,
-        hasBody: !!Body
-      })
+    if (!From) {
+      logger.warn('[Twilio] Missing From field')
       return null
     }
 
@@ -347,7 +347,31 @@ function extractTwilioData(body) {
     const phoneNumber = From.replace('whatsapp:', '')
     const pushName = ProfileName || 'Cliente'
 
-    // Log sem dados sensíveis do cliente
+    // Verifica se é mensagem de áudio/mídia
+    const numMedia = parseInt(NumMedia) || 0
+    const isAudio = numMedia > 0 && MediaContentType0?.startsWith('audio/')
+
+    if (isAudio) {
+      logger.info('[Twilio] Audio message detected, will transcribe')
+      return {
+        phoneNumber,
+        message: Body || '', // Pode ter legenda junto com áudio
+        pushName,
+        audioUrl: MediaUrl0,
+        audioType: MediaContentType0
+      }
+    }
+
+    if (!Body) {
+      // Mídia não-áudio (imagem, vídeo, etc) sem texto
+      if (numMedia > 0) {
+        logger.info('[Twilio] Non-audio media received, treating as generic message')
+        return { phoneNumber, message: '[Cliente enviou uma imagem/mídia]', pushName }
+      }
+      logger.warn('[Twilio] Missing Body field')
+      return null
+    }
+
     logger.debug('[Twilio] Webhook data extracted successfully')
 
     return { phoneNumber, message: Body, pushName }
@@ -362,11 +386,30 @@ function extractTwilioData(body) {
  * Isso permite que o webhook responda imediatamente
  */
 async function processMessageAsync(webhookData) {
-  const { phoneNumber, message, pushName } = webhookData
+  const { phoneNumber, pushName, audioUrl, audioType } = webhookData
+  let { message } = webhookData
   const startTime = Date.now()
 
   try {
     logger.info('[Twilio] ASYNC processing started')
+
+    // Se é áudio, transcreve antes de processar
+    if (audioUrl) {
+      const transcription = await transcribeAudio(audioUrl, audioType)
+      if (transcription) {
+        message = transcription
+        logger.info(`[Twilio] Audio transcribed: "${transcription.substring(0, 80)}..."`)
+      } else {
+        // Fallback: pede pro cliente digitar
+        await sendTwilioMessage(phoneNumber,
+          'Desculpa, não consegui entender o áudio. Pode me mandar por texto? 😊'
+        )
+        return
+      }
+    }
+
+    // Ignora mensagens vazias
+    if (!message || !message.trim()) return
 
     // ID da conversa = número do WhatsApp
     const conversationId = `whatsapp_${phoneNumber.replace('+', '')}`
