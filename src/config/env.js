@@ -63,8 +63,8 @@ export function validateEnv() {
       // Anthropic
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
 
-      // OpenAI
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      // OpenAI (string vazia → undefined para não falhar validação)
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || undefined,
 
       // Supabase
       VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL,
