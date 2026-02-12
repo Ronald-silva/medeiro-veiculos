@@ -401,7 +401,7 @@ export default function CatalogPage() {
               {/* Contact Button */}
               <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
                 <a
-                  href={`https://wa.me/5585988852900?text=Olá! Tenho interesse no ${selectedCar.name} ${selectedCar.year}. Poderia me passar mais informações?`}
+                  href={`https://wa.me/5585920021150?text=Olá! Tenho interesse no ${selectedCar.name} ${selectedCar.year}. Poderia me passar mais informações?`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full bg-green-600 hover:bg-green-700 text-white text-center px-6 py-4 rounded-lg font-bold text-lg transition-colors"
