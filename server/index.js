@@ -1,21 +1,22 @@
 // Servidor Express para APIs - Medeiros Veículos
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { validateEnv } from '../src/config/env.js';
-import { initSentry, captureException } from '../src/lib/sentry.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Carrega variáveis de ambiente do .env.local (apenas local, não sobrescreve Railway)
-import fs from 'fs';
+// Carrega .env.local apenas em desenvolvimento (Railway injeta env vars direto no container)
 const envPath = path.join(__dirname, '..', '.env.local');
 if (fs.existsSync(envPath)) {
-  dotenv.config({ path: envPath, override: false });
+  const dotenv = await import('dotenv');
+  dotenv.default.config({ path: envPath, override: false });
 }
+
+import { validateEnv } from '../src/config/env.js';
+import { initSentry, captureException } from '../src/lib/sentry.js';
 
 // Inicializa Sentry ANTES de qualquer outra coisa (captura erros de inicialização)
 initSentry();
