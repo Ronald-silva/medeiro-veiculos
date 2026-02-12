@@ -38,7 +38,7 @@ function parseBudget(budget) {
  * @param {Array<string>} vehicleTypes - Tipos de veículos (opcional)
  * @returns {Promise<Array|null>} Array de veículos ou null se falhar
  */
-async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = null) {
+async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = null, searchTerm = null) {
   if (!isSupabaseConfigured()) {
     logger.warn('[recommend_vehicles] Supabase não configurado');
     return null;
@@ -48,10 +48,16 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
     let query = supabase
       .from('vehicles')
       .select('*')
-      .eq('status', 'available')
-      .lte('price', maxBudget)
-      .order('price', { ascending: false })
-      .limit(limit);
+      .eq('status', 'available');
+
+    // Se tem busca por nome, não limita por preço (cliente quer ver um carro específico)
+    if (searchTerm) {
+      query = query.ilike('name', `%${searchTerm}%`);
+    } else {
+      query = query.lte('price', maxBudget);
+    }
+
+    query = query.order('price', { ascending: false }).limit(limit);
 
     // Filtrar por tipo se especificado
     if (vehicleTypes && vehicleTypes.length > 0) {
@@ -82,18 +88,18 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
  * @param {number} params.maxResults - Máximo de resultados (padrão: 2)
  * @returns {Promise<object>} Resultado da recomendação
  */
-export async function recommendVehicles({ budget, vehicleType, maxResults = 2 }) {
+export async function recommendVehicles({ budget, vehicleType, searchTerm, maxResults = 2 }) {
   const timestamp = new Date().toISOString();
 
   try {
-    logger.debug('[recommend_vehicles] Buscando veículos:', { budget, vehicleType, maxResults });
+    logger.debug('[recommend_vehicles] Buscando veículos:', { budget, vehicleType, searchTerm, maxResults });
 
     // Parse do orçamento
     const maxBudget = parseBudget(budget);
     logger.debug(`[recommend_vehicles] Orçamento parseado: R$ ${maxBudget.toLocaleString('pt-BR')}`);
 
     // Busca do Supabase (única fonte de dados)
-    const vehiclesFromDb = await fetchVehiclesFromSupabase(maxBudget, maxResults + 1, vehicleType);
+    const vehiclesFromDb = await fetchVehiclesFromSupabase(maxBudget, maxResults + 1, vehicleType, searchTerm);
 
     // Erro de conexão com Supabase
     if (vehiclesFromDb === null) {
