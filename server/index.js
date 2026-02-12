@@ -192,7 +192,8 @@ app.get('/api/health', async (_req, res) => {
 
   // 1. Verifica variáveis de ambiente
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY.includes('your-');
-  const hasOpenAI = !!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('your-');
+  const openaiKey = process.env.OPENAI_API_KEY || '';
+  const hasOpenAI = openaiKey.length > 10 && !openaiKey.includes('your-');
   const hasSupabase = !!process.env.VITE_SUPABASE_URL && !!process.env.VITE_SUPABASE_ANON_KEY;
   const hasUpstash = !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -200,6 +201,7 @@ app.get('/api/health', async (_req, res) => {
     status: hasAnthropic || hasOpenAI ? 'ok' : 'warning',
     anthropic: hasAnthropic,
     openai: hasOpenAI,
+    openai_key_length: openaiKey.length,
     supabase: hasSupabase,
     upstash: hasUpstash
   };
