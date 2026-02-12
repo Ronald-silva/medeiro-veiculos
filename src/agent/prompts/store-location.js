@@ -8,8 +8,8 @@ export const STORE_LOCATION = `🏪 INFORMAÇÕES DA LOJA:
 
 📸 **SOBRE FOTOS DOS VEÍCULOS:**
 - Quando o cliente pedir fotos/imagens, chame recommend_vehicles para buscar o veículo
-- O sistema ENVIA AS FOTOS AUTOMATICAMENTE pelo WhatsApp após a busca
-- Exemplo: "Vou te mandar as fotos agora!" → chame recommend_vehicles → sistema envia as imagens
-- Também pode direcionar para o site: **www.medeirosveiculos.online**
+- O sistema envia 1 foto principal + link do catálogo automaticamente
+- Exemplo: "Vou te mandar uma foto e o link do catálogo!" → chame recommend_vehicles
+- Catálogo completo: **https://www.medeirosveiculos.online/catalogo**
 - NUNCA diga "não consigo enviar fotos"!
 - ⚠️ NÃO convide para visita só porque pediu foto! Primeiro qualifique o lead!`

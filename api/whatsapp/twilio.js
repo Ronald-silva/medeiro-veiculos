@@ -475,13 +475,17 @@ async function processMessageAsync(webhookData) {
     // Envia resposta de texto via Twilio API
     await sendTwilioMessage(phoneNumber, camilaResult.message)
 
-    // Envia imagens de veículos (se houver)
+    // Envia imagem principal do veículo + link do catálogo
     if (camilaResult.vehicleImages && camilaResult.vehicleImages.length > 0) {
       logger.info(`[Twilio] Sending ${camilaResult.vehicleImages.length} vehicle image(s)`)
 
       for (const img of camilaResult.vehicleImages) {
         try {
-          await sendTwilioMessage(phoneNumber, img.caption, img.url)
+          await sendTwilioMessage(
+            phoneNumber,
+            `${img.caption}\n\n📋 Veja mais fotos e detalhes no catálogo:\nhttps://www.medeirosveiculos.online/catalogo`,
+            img.url
+          )
         } catch (imgError) {
           logger.warn(`[Twilio] Failed to send vehicle image: ${imgError.message}`)
         }
