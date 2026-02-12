@@ -10,8 +10,12 @@ import { initSentry, captureException } from '../src/lib/sentry.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Carrega variáveis de ambiente
-dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
+// Carrega variáveis de ambiente do .env.local (apenas local, não sobrescreve Railway)
+import fs from 'fs';
+const envPath = path.join(__dirname, '..', '.env.local');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath, override: false });
+}
 
 // Inicializa Sentry ANTES de qualquer outra coisa (captura erros de inicialização)
 initSentry();
