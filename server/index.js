@@ -35,6 +35,9 @@ app.use(express.urlencoded({ extended: true })); // Para Twilio webhooks
 const buildPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(buildPath));
 
+// Fallback para imagens de veículos (garante acesso mesmo se dist/cars não existir)
+app.use('/cars', express.static(path.join(__dirname, '..', 'public', 'cars')));
+
 // Importa dinamicamente o handler do chat
 let chatHandler;
 async function loadChatHandler() {
