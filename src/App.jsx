@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider } from './contexts/AuthContext'
@@ -56,6 +56,32 @@ const PageLoader = () => (
 )
 
 function App() {
+  // Proteção global contra download de imagens de veículos
+  useEffect(() => {
+    // Bloqueia Ctrl+S (salvar página) e Ctrl+P (imprimir) nas páginas públicas
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) {
+        // Permite em páginas do CRM
+        if (window.location.pathname.startsWith('/crm')) return
+        e.preventDefault()
+      }
+    }
+
+    // Bloqueia right-click em imagens protegidas
+    const handleContextMenu = (e) => {
+      if (e.target.closest('.protected-image-container')) {
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('contextmenu', handleContextMenu)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('contextmenu', handleContextMenu)
+    }
+  }, [])
+
   return (
     <HelmetProvider>
       <BrowserRouter>

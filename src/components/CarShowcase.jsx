@@ -4,6 +4,7 @@ import CarGallery from './CarGallery'
 import InstallmentCalculator from './conversion/InstallmentCalculator'
 import Badge from './ui/Badge'
 import LiveViewers from './conversion/LiveViewers'
+import ProtectedImage from './ProtectedImage'
 
 const cars = [
   {
@@ -119,7 +120,7 @@ export default function CarShowcase() {
                   className="relative aspect-w-16 aspect-h-9 bg-gray-100 cursor-pointer"
                   onClick={() => setSelectedCar(car)}
                 >
-                  <img
+                  <ProtectedImage
                     src={car.image}
                     alt={car.name}
                     className="object-cover w-full h-full"

@@ -108,4 +108,73 @@ img[src*="perfil-camila"] {
 .rounded-full img {
   transform: translate3d(0, 0, 0);
   -webkit-transform: translate3d(0, 0, 0);
-} 
+}
+
+/* ============================================
+   PROTEÇÃO ANTI-DOWNLOAD DE IMAGENS
+   ============================================ */
+
+/* Container da imagem protegida */
+.protected-image-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* Imagem protegida - bloqueia drag e seleção */
+.protected-image {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+/* Overlay transparente sobre a imagem - captura clicks/right-click */
+.protected-image-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: inherit;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Marca d'água sutil via pseudo-elemento */
+.protected-image-container::after {
+  content: 'Medeiros Veículos';
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 2;
+  font-family: Arial, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* Esconde imagens de veículos na impressão */
+@media print {
+  .protected-image-container,
+  .protected-image-container img {
+    display: none !important;
+  }
+
+  .protected-image-container::before {
+    content: 'Imagem protegida - visite medeirosveiculos.online';
+    display: block;
+    padding: 40px;
+    text-align: center;
+    color: #666;
+    background: #f0f0f0;
+    border: 1px dashed #ccc;
+  }
+}

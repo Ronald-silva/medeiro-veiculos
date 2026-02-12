@@ -13,6 +13,7 @@ import {
   formatPrice,
   filterCars
 } from '../hooks/useVehicles'
+import ProtectedImage from '../components/ProtectedImage'
 
 export default function CatalogPage() {
   const navigate = useNavigate()
@@ -223,7 +224,7 @@ export default function CatalogPage() {
               >
                 {/* Car Image */}
                 <div className="relative h-48 bg-gray-200 overflow-hidden">
-                  <img
+                  <ProtectedImage
                     src={car.images[0]}
                     alt={car.name}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
@@ -297,7 +298,7 @@ export default function CatalogPage() {
 
             {/* Image Gallery */}
             <div className="relative h-96 bg-gray-900">
-              <img
+              <ProtectedImage
                 src={selectedCar.images[currentImageIndex]}
                 alt={`${selectedCar.name} - ${currentImageIndex + 1}`}
                 className="w-full h-full object-contain"
@@ -341,7 +342,7 @@ export default function CatalogPage() {
                           : 'border-gray-300 hover:border-gray-400'
                       }`}
                     >
-                      <img
+                      <ProtectedImage
                         src={image}
                         alt={`Thumbnail ${index + 1}`}
                         className="w-full h-full object-cover"

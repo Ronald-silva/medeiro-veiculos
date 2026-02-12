@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useFeaturedVehicles, formatPrice as formatPriceUtil } from '../hooks/useVehicles';
 import Badge from './ui/Badge';
 import ConsultoraAvatar from './ConsultoraAvatar';
+import ProtectedImage from './ProtectedImage';
 
 export default function VehicleCatalog({ onVehicleInterest }) {
   const { vehicles, loading } = useFeaturedVehicles(); // Busca do Supabase
@@ -179,7 +180,7 @@ export default function VehicleCatalog({ onVehicleInterest }) {
                 >
                   {/* Vehicle Image */}
                   <div className="relative h-64 bg-gray-900 overflow-hidden">
-                    <img
+                    <ProtectedImage
                       src={vehicle.images[0]}
                       alt={vehicle.name}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"

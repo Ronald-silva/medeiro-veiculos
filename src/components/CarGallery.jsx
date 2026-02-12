@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Pagination, Thumbs, Zoom } from 'swiper/modules'
+import ProtectedImage from './ProtectedImage'
 
 // Import Swiper styles
 import 'swiper/css'
@@ -60,7 +61,7 @@ export default function CarGallery({ carId }) {
         {images.map((image) => (
           <SwiperSlide key={image.id} className="bg-gray-900">
             <div className="swiper-zoom-container">
-              <img
+              <ProtectedImage
                 src={image.url}
                 alt={image.alt}
                 className={`w-full h-full object-contain transition-transform duration-300 ${
@@ -86,7 +87,7 @@ export default function CarGallery({ carId }) {
           {images.map((image) => (
             <SwiperSlide key={image.id} className="cursor-pointer">
               <div className="aspect-w-16 aspect-h-9">
-                <img
+                <ProtectedImage
                   src={image.url}
                   alt={image.alt}
                   className="w-full h-full object-cover rounded-lg opacity-50 hover:opacity-100 transition-opacity duration-200"
