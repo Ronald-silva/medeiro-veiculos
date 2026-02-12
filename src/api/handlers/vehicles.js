@@ -52,7 +52,17 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
 
     // Se tem busca por nome, não limita por preço (cliente quer ver um carro específico)
     if (searchTerm) {
-      query = query.ilike('name', `%${searchTerm}%`);
+      // Sinônimos comuns (cliente pode usar nome diferente do cadastrado)
+      const synonyms = {
+        'hilux': 'SW4', 'sw-4': 'SW4',
+        'pajeiro': 'Pajero', 'pagero': 'Pajero',
+        'hr v': 'HR-V', 'hrv': 'HR-V',
+        'l-200': 'L200', 'triton': 'L200',
+        'cg': 'CG', 'titan': 'CG',
+        'spacefox': 'Spacefox', 'space fox': 'Spacefox'
+      };
+      const term = synonyms[searchTerm.toLowerCase()] || searchTerm;
+      query = query.or(`name.ilike.%${term}%,model.ilike.%${term}%,brand.ilike.%${term}%`);
     } else {
       query = query.lte('price', maxBudget);
     }
