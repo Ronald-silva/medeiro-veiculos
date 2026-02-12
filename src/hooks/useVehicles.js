@@ -122,23 +122,28 @@ const transformVehicle = (vehicle) => {
     }
   }
 
+  const year = vehicle.year_model || vehicle.year_fabrication
+  const km = vehicle.km
+  const fuel = vehicle.fuel_type || vehicle.fuel
+  const type = vehicle.vehicle_type || vehicle.type
+
   return {
     id: vehicle.id,
-    name: `${vehicle.brand} ${vehicle.model}`,
+    name: vehicle.name || `${vehicle.brand} ${vehicle.model}`,
     brand: vehicle.brand,
     model: vehicle.model,
     version: vehicle.version || '',
-    year: vehicle.year,
+    year: year,
     price: vehicle.price,
-    mileage: formatMileage(vehicle.mileage),
-    mileageRaw: vehicle.mileage || 0,
+    mileage: km ? formatMileage(km) : null,
+    mileageRaw: km || 0,
     color: vehicle.color || 'Não informado',
-    fuel: mapFuel(vehicle.fuel),
+    fuel: mapFuel(fuel),
     transmission: mapTransmission(vehicle.transmission),
-    category: mapVehicleType(vehicle.type),
-    type: vehicle.type,
-    seats: vehicle.seats || 5,
-    description: vehicle.description || `${vehicle.brand} ${vehicle.model} ${vehicle.version || ''} - ${vehicle.year}`,
+    category: mapVehicleType(type),
+    type: type,
+    seats: vehicle.seats || vehicle.doors || 5,
+    description: vehicle.description || `${vehicle.brand} ${vehicle.model} ${vehicle.version || ''} - ${year}`,
     features: features,
     images: images,
     status: vehicle.status || 'available',
