@@ -3,12 +3,10 @@
  *
  * Fluxo: Twilio envia MediaUrl → download com auth → Whisper transcreve → texto
  */
-import OpenAI from 'openai'
 import logger from '../../src/lib/logger.js'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
+// Cliente OpenAI inicializado sob demanda (evita crash se key não está configurada)
+let openai = null
 
 /**
  * Baixa áudio do Twilio e transcreve com Whisper
@@ -24,6 +22,12 @@ export async function transcribeAudio(mediaUrl, mediaType) {
   }
 
   try {
+    // Importa OpenAI sob demanda
+    if (!openai) {
+      const { default: OpenAI } = await import('openai')
+      openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    }
+
     logger.info('[Audio] Downloading audio from Twilio...')
 
     // Download do áudio com autenticação Twilio
