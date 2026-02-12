@@ -28,19 +28,23 @@ export async function transcribeAudio(mediaUrl, mediaType) {
       openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     }
 
-    logger.info('[Audio] Downloading audio from Twilio...')
+    const hasTwilioCreds = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+    logger.info(`[Audio] Downloading audio from Twilio... URL: ${mediaUrl}, hasCreds: ${hasTwilioCreds}, type: ${mediaType}`)
 
     // Download do áudio com autenticação Twilio
-    const response = await fetch(mediaUrl, {
+    const fetchOptions = hasTwilioCreds ? {
       headers: {
         'Authorization': 'Basic ' + Buffer.from(
           `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
         ).toString('base64')
       }
-    })
+    } : {}
+
+    const response = await fetch(mediaUrl, fetchOptions)
 
     if (!response.ok) {
-      logger.error('[Audio] Failed to download:', response.status)
+      const errorBody = await response.text().catch(() => 'no body')
+      logger.error(`[Audio] Failed to download: status=${response.status}, statusText=${response.statusText}, body=${errorBody.substring(0, 200)}`)
       return null
     }
 

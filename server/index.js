@@ -18,12 +18,6 @@ if (fs.existsSync(envPath)) {
 import { validateEnv } from '../src/config/env.js';
 import { initSentry, captureException } from '../src/lib/sentry.js';
 
-// DEBUG: Log env vars names que contêm "OPENAI" para diagnosticar variável que não carrega
-const openaiVars = Object.keys(process.env).filter(k => k.toUpperCase().includes('OPENAI'));
-console.log(`[ENV DEBUG] Vars com "OPENAI" no nome: ${openaiVars.length > 0 ? openaiVars.join(', ') : 'NENHUMA ENCONTRADA'}`);
-console.log(`[ENV DEBUG] OPENAI_API_KEY type: ${typeof process.env.OPENAI_API_KEY}, defined: ${process.env.OPENAI_API_KEY !== undefined}, length: ${(process.env.OPENAI_API_KEY || '').length}`);
-console.log(`[ENV DEBUG] Total env vars: ${Object.keys(process.env).length}`);
-
 // Inicializa Sentry ANTES de qualquer outra coisa (captura erros de inicialização)
 initSentry();
 
@@ -212,7 +206,6 @@ app.get('/api/health', async (_req, res) => {
     status: hasAnthropic || hasOpenAI ? 'ok' : 'warning',
     anthropic: hasAnthropic,
     openai: hasOpenAI,
-    openai_key_length: openaiKey.length,
     supabase: hasSupabase,
     upstash: hasUpstash
   };
