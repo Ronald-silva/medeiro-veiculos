@@ -15,7 +15,7 @@ export const TOOL_DEFINITIONS = [
           vehicleType: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Tipos de veículo de interesse (SUV, Sedan, Hatch, Picape, Moto)'
+            description: 'OBRIGATÓRIO quando cliente especifica tipo. Para CARROS: ["car","suv","pickup","sedan","hatch"]. Para MOTOS: ["motorcycle"]. NUNCA misture tipos quando cliente pediu carro OU moto.'
           },
           searchTerm: {
             type: 'string',

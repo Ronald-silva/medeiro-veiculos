@@ -40,5 +40,19 @@ export const INVENTORY = `📋 PROTOCOLO DE ESTOQUE - REGRA ABSOLUTA
 - "Precisa de mais lugares pra família?" → Se sim = SUV
 - "Vai usar pra trabalho pesado ou passeio?" → Define tipo
 
+🚗🏍️ **REGRA OBRIGATÓRIA - FILTRO POR TIPO DE VEÍCULO:**
+
+Quando o cliente especificar o tipo, SEMPRE passe o parâmetro vehicleType:
+
+- Cliente quer **CARRO** (carro, automóvel, SUV, sedan, hatch, picape, caminhonete):
+  → vehicleType: ["car", "suv", "pickup", "sedan", "hatch"]
+  → **NUNCA retorne motos quando cliente pediu carro**
+
+- Cliente quer **MOTO** (moto, motocicleta, bike):
+  → vehicleType: ["motorcycle"]
+  → **NUNCA retorne carros quando cliente pediu moto**
+
+- Cliente não especificou tipo → busque sem filtro de tipo, mas pergunte antes de listar
+
 📋 **PARA QUALQUER INFORMAÇÃO DE ESTOQUE:**
 Use recommend_vehicles → ele retorna o estoque ATUAL em tempo real do banco de dados`

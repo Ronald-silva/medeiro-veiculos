@@ -31,6 +31,17 @@ function parseBudget(budget) {
   }
 }
 
+// Normaliza valores de vehicleType enviados pela IA para os valores reais do banco
+function normalizeVehicleTypes(types) {
+  const map = {
+    'moto': 'motorcycle', 'motocicleta': 'motorcycle', 'motorcycle': 'motorcycle',
+    'carro': 'car', 'car': 'car', 'sedan': 'sedan', 'hatch': 'hatch',
+    'suv': 'suv', 'picape': 'pickup', 'pickup': 'pickup',
+    'caminhao': 'truck', 'caminhão': 'truck', 'truck': 'truck', 'van': 'van',
+  };
+  return types.map(t => map[t.toLowerCase()] || t.toLowerCase());
+}
+
 /**
  * Busca veículos no Supabase
  * @param {number} maxBudget - Orçamento máximo
@@ -69,9 +80,11 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
 
     query = query.order('price', { ascending: false }).limit(limit);
 
-    // Filtrar por tipo se especificado
+    // Filtrar por tipo se especificado — normaliza para valores reais do banco
     if (vehicleTypes && vehicleTypes.length > 0) {
-      query = query.in('vehicle_type', vehicleTypes);
+      const normalized = normalizeVehicleTypes(vehicleTypes);
+      logger.debug(`[recommend_vehicles] Filtro tipo: ${vehicleTypes.join(',')} → ${normalized.join(',')}`);
+      query = query.in('vehicle_type', normalized);
     }
 
     const { data: vehicles, error } = await query;
