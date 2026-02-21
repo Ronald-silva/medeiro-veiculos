@@ -50,6 +50,7 @@ Acesse: http://localhost:3000/crm
 - ✅ Agendamento automático de visitas
 - ✅ Captura de leads qualificados
 - ✅ Design responsivo profissional
+- ✅ **Proteção anti-download de imagens** (overlay, bloqueio de right-click, marca d'água, bloqueio de impressão)
 
 ### 💼 CRM Completo
 - ✅ Dashboard com métricas financeiras em tempo real
@@ -68,6 +69,8 @@ Acesse: http://localhost:3000/crm
 - ✅ Agendamento inteligente de visitas
 - ✅ Qualificação automática de leads (Lead Scoring)
 - ✅ Transferência para vendedor humano
+- ✅ **Transcrição de áudio** - Whisper (OpenAI) converte áudios do WhatsApp em texto
+- ✅ **Envio de fotos** - Envia 1 foto + link do catálogo quando cliente pede imagens
 - ✅ **Supervisor de IA** - Valida respostas antes de enviar
 - ✅ **Inventário Dinâmico** - Supabase como fonte única de dados
 - ✅ **Predictive Intent Score** - IA preditiva que detecta intenção de compra
@@ -179,13 +182,19 @@ medeiros-veiculos/
 │   │   ├── crm/           # Componentes do CRM
 │   │   │   └── dashboard/ # Dashboard refatorado
 │   │   ├── conversion/    # Chatbot IA
+│   │   ├── ProtectedImage.jsx # Proteção anti-download de imagens
 │   │   └── ...
 │   ├── pages/             # Páginas principais
 │   │   └── crm/          # Páginas do CRM
 │   ├── lib/              # Integrações (Supabase, OpenAI)
+│   ├── hooks/            # React hooks (useVehicles, etc)
 │   ├── utils/            # Funções utilitárias
-│   ├── data/             # Inventário de veículos
-│   └── constants/        # Prompts da IA
+│   ├── config/           # Configurações (env, etc)
+│   └── agent/            # Agente IA (prompts, tools)
+├── api/                  # API handlers
+│   ├── whatsapp/         # Twilio webhook + transcrição de áudio
+│   └── chat/             # Chat IA endpoint
+├── server/               # Express.js server
 ├── public/               # Assets estáticos
 │   └── cars/            # Fotos dos veículos
 ├── docs/                # 📚 Documentação completa
@@ -228,6 +237,7 @@ medeiros-veiculos/
 - **Estilização:** TailwindCSS
 - **Backend:** Supabase (PostgreSQL) + Express.js
 - **IA:** Anthropic Claude (claude-sonnet-4-5-20250929)
+- **Áudio:** OpenAI Whisper (transcrição de áudios do WhatsApp)
 - **Cache:** Upstash Redis (histórico de conversas)
 - **WhatsApp:** Twilio API
 - **Deploy:** Railway
@@ -281,6 +291,37 @@ Venda de R$ 50.000
 
 ---
 
+## 🔒 Segurança de Imagens
+
+O catálogo possui proteção contra download de fotos dos veículos:
+
+| Proteção | Descrição |
+|----------|-----------|
+| **Overlay transparente** | Impede "Salvar imagem como..." no right-click |
+| **Bloqueio de drag** | Não permite arrastar imagens para salvar |
+| **Bloqueio de Ctrl+S/P** | Impede salvar página e imprimir nas páginas públicas |
+| **Proteção na impressão** | Imagens substituídas por aviso ao imprimir |
+| **Marca d'água** | Texto "Medeiros Veículos" sutil no canto das fotos |
+| **CSS anti-seleção** | Impede selecionar/copiar imagens |
+
+---
+
+## 🔑 Variáveis de Ambiente (Railway)
+
+| Variável | Descrição |
+|----------|-----------|
+| `ANTHROPIC_API_KEY` | API key do Claude (IA principal) |
+| `OPENAI_API_KEY` | API key OpenAI (Whisper - transcrição de áudio) |
+| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Chave anon do Supabase |
+| `UPSTASH_REDIS_REST_URL` | URL do Redis (cache de conversas) |
+| `UPSTASH_REDIS_REST_TOKEN` | Token do Redis |
+| `TWILIO_ACCOUNT_SID` | SID da conta Twilio |
+| `TWILIO_AUTH_TOKEN` | Token de autenticação Twilio |
+| `TWILIO_WHATSAPP_NUMBER` | Número WhatsApp do Twilio |
+
+---
+
 ## 🎯 Próximos Passos
 
 1. **Agora:** Abra [docs/INICIAR-SISTEMA.md](docs/INICIAR-SISTEMA.md)
@@ -297,8 +338,10 @@ Venda de R$ 50.000
 
 **Medeiros Veículos**
 📍 Av. Américo Barreira, 909 - Loja 03, Demócrito Rocha, Fortaleza/CE
-📱 WhatsApp: (85) 92002-1150
+📱 WhatsApp: (85) 9 2002-1150
 🕐 Seg-Sex: 8h às 17h | Sáb: 8h às 13h | Dom: Fechado
+🌐 Site: https://www.medeirosveiculos.online
+📋 Catálogo: https://www.medeirosveiculos.online/catalogo
 
 ---
 
