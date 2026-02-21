@@ -1,43 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
-// Mapeamento de imagens locais por modelo (fallback quando Supabase não tem imagens)
-// NOTA: Os nomes dos arquivos devem corresponder exatamente aos arquivos em /public/cars/
-const IMAGE_MAP = {
-  'hilux': ['/cars/hilux-1.jpeg', '/cars/hilux-2.jpeg', '/cars/hilux-3.jpeg', '/cars/hilux-4.jpeg', '/cars/hilux-5.jpeg'],
-  'sw4': ['/cars/hilux-1.jpeg', '/cars/hilux-2.jpeg', '/cars/hilux-3.jpeg', '/cars/hilux-4.jpeg', '/cars/hilux-5.jpeg'],
-  'hr-v': ['/cars/hrv-1.jpeg', '/cars/hrv-2.jpeg', '/cars/hrv-3.jpeg', '/cars/hrv-4.jpeg', '/cars/hrv-5.jpeg'],
-  'hrv': ['/cars/hrv-1.jpeg', '/cars/hrv-2.jpeg', '/cars/hrv-3.jpeg', '/cars/hrv-4.jpeg', '/cars/hrv-5.jpeg'],
-  'ninja': ['/cars/moto-1.jpeg', '/cars/moto-2.jpeg', '/cars/moto-3.jpeg', '/cars/moto-4.jpeg', '/cars/moto-5.jpeg'],
-  'cg': ['/cars/titan-1.png', '/cars/titan-2.png', '/cars/titan-3.png'],
-  'cg 160': ['/cars/titan-1.png', '/cars/titan-2.png', '/cars/titan-3.png'],
-  'l200': ['/cars/L200-1.jpeg', '/cars/L200-2.jpeg', '/cars/L200-3.jpeg', '/cars/L200-4.jpeg', '/cars/L200-5.jpeg'],
-  'triton': ['/cars/L200-1.jpeg', '/cars/L200-2.jpeg', '/cars/L200-3.jpeg', '/cars/L200-4.jpeg', '/cars/L200-5.jpeg'],
-  'ranger': ['/cars/Ranger-1.jpeg', '/cars/Ranger-2.jpeg', '/cars/Ranger-3.jpeg', '/cars/Ranger-4.jpeg', '/cars/Ranger-5.jpeg'],
-  'pajero': ['/cars/Pagero-1.jpeg', '/cars/Pagero-2.jpeg', '/cars/Pagero-3.jpeg', '/cars/Pagero-4.jpeg', '/cars/Pagero-5.jpeg'],
-  'spacefox': ['/cars/space-1.jpeg', '/cars/space-2.jpeg', '/cars/space-3.jpeg', '/cars/space-4.jpeg', '/cars/space-5.jpeg'],
-  'space': ['/cars/space-1.jpeg', '/cars/space-2.jpeg', '/cars/space-3.jpeg', '/cars/space-4.jpeg', '/cars/space-5.jpeg'],
-  'vitara': ['/cars/vitara-1.jpeg', '/cars/vitara-2.jpeg', '/cars/vitara-3.jpeg', '/cars/vitara-4.jpeg', '/cars/vitara-5.jpeg'],
-  'grand vitara': ['/cars/vitara-1.jpeg', '/cars/vitara-2.jpeg', '/cars/vitara-3.jpeg', '/cars/vitara-4.jpeg', '/cars/vitara-5.jpeg'],
-  'onix': ['/cars/onix-1.jpeg', '/cars/onix-2.jpeg', '/cars/onix-3.jpeg', '/cars/onix-4.jpeg', '/cars/onix-5.jpeg']
-}
-
-// Função para encontrar imagens baseadas no modelo
-function getImagesForModel(brand, model) {
-  const searchTerms = [model?.toLowerCase(), brand?.toLowerCase()]
-
-  for (const term of searchTerms) {
-    if (!term) continue
-    for (const [key, images] of Object.entries(IMAGE_MAP)) {
-      if (term.includes(key) || key.includes(term)) {
-        return images
-      }
-    }
-  }
-
-  return null
-}
-
 // Funções auxiliares
 export const formatPrice = (price) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -54,14 +17,24 @@ export const formatMileage = (km) => {
 
 // Mapear categoria do Supabase para o formato do site
 const mapVehicleType = (type) => {
+  if (!type) return 'hatch'
+  const normalized = type.toLowerCase().trim()
   const typeMap = {
     'car': 'hatch',
+    'hatch': 'hatch',
     'suv': 'suv',
     'pickup': 'pickup',
+    'picape': 'pickup',
+    'truck': 'pickup',
     'motorcycle': 'motorcycle',
-    'sedan': 'sedan'
+    'moto': 'motorcycle',
+    'motocicleta': 'motorcycle',
+    'bike': 'motorcycle',
+    'sedan': 'sedan',
+    'minivan': 'sedan',
+    'van': 'sedan'
   }
-  return typeMap[type] || type
+  return typeMap[normalized] || normalized
 }
 
 // Mapear combustível
@@ -111,15 +84,9 @@ const transformVehicle = (vehicle) => {
     }
   }
 
-  // Fallback: buscar imagens baseadas no modelo se não tiver no Supabase
+  // Se não tiver imagens no Supabase, exibe placeholder neutro
   if (images.length === 0) {
-    const fallbackImages = getImagesForModel(vehicle.brand, vehicle.model)
-    if (fallbackImages) {
-      images = fallbackImages
-    } else {
-      // Última opção: placeholder
-      images = ['https://via.placeholder.com/400x300?text=Sem+Foto']
-    }
+    images = ['/cars/placeholder.svg']
   }
 
   const year = vehicle.year_model || vehicle.year_fabrication
@@ -193,14 +160,9 @@ export function useVehicles(options = {}) {
   return { vehicles, loading, error, refetch: fetchVehicles }
 }
 
-// Hook para buscar veículos em destaque
+// Hook para buscar veículos em destaque (retorna todos, ordenação feita no componente)
 export function useFeaturedVehicles() {
-  const { vehicles, loading, error, refetch } = useVehicles()
-
-  // Retorna os primeiros 6 veículos (ou todos se houver menos)
-  const featuredVehicles = vehicles.slice(0, 6)
-
-  return { vehicles: featuredVehicles, loading, error, refetch }
+  return useVehicles()
 }
 
 // Filtros disponíveis (mantém compatibilidade com o código antigo)

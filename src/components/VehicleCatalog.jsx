@@ -6,10 +6,21 @@ import ConsultoraAvatar from './ConsultoraAvatar';
 import ProtectedImage from './ProtectedImage';
 
 export default function VehicleCatalog({ onVehicleInterest }) {
-  const { vehicles, loading } = useFeaturedVehicles(); // Busca do Supabase
+  const { vehicles: allVehicles, loading } = useFeaturedVehicles(); // Busca do Supabase
+  // Ordena: destaques primeiro, depois os demais
+  const vehicles = [...allVehicles].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
   const [selectedType, setSelectedType] = useState('Todos');
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300000 });
+
+  // Labels legíveis para cada categoria
+  const categoryLabels = {
+    'hatch': 'Hatch',
+    'sedan': 'Sedan',
+    'suv': 'SUV',
+    'pickup': 'Picape',
+    'motorcycle': 'Moto',
+  }
 
   // Get unique types and brands for filters (filter out undefined/null to avoid duplicate keys)
   const types = ['Todos', ...new Set(vehicles.map(v => v.category).filter(Boolean))];
@@ -79,7 +90,7 @@ export default function VehicleCatalog({ onVehicleInterest }) {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {type}
+                      {type === 'Todos' ? 'Todos' : (categoryLabels[type] || type)}
                     </button>
                   ))}
                 </div>
@@ -128,7 +139,7 @@ export default function VehicleCatalog({ onVehicleInterest }) {
               <div className="mt-4 flex items-center gap-2">
                 <span className="text-sm text-gray-600">Filtros ativos:</span>
                 {selectedType !== 'Todos' && (
-                  <Badge variant="primary">{selectedType}</Badge>
+                  <Badge variant="primary">{categoryLabels[selectedType] || selectedType}</Badge>
                 )}
                 {selectedBrand !== 'Todas' && (
                   <Badge variant="primary">{selectedBrand}</Badge>

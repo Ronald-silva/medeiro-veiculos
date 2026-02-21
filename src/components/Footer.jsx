@@ -1,4 +1,16 @@
+import { useState } from 'react'
+
 export default function Footer() {
+  const [emailCopied, setEmailCopied] = useState(false)
+
+  const handleEmailClick = (e) => {
+    e.preventDefault()
+    navigator.clipboard.writeText('contato@medeirosveiculos.online').then(() => {
+      setEmailCopied(true)
+      setTimeout(() => setEmailCopied(false), 2500)
+    })
+  }
+
   return (
     <footer className="bg-gray-900 text-white">
       {/* Main Footer */}
@@ -22,10 +34,16 @@ export default function Footer() {
               <li>
                 <a
                   href="mailto:contato@medeirosveiculos.online"
-                  className="hover:text-accent"
+                  onClick={handleEmailClick}
+                  className="hover:text-accent relative"
+                  title="Clique para copiar o email"
                 >
                   <i className="fas fa-envelope mr-2"></i>
-                  contato@medeirosveiculos.online
+                  {emailCopied ? (
+                    <span className="text-green-400">Email copiado!</span>
+                  ) : (
+                    'contato@medeirosveiculos.online'
+                  )}
                 </a>
               </li>
               <li>
@@ -89,4 +107,4 @@ export default function Footer() {
       </div>
     </footer>
   )
-} 
+}
