@@ -1,7 +1,8 @@
-# https://medeirosveiculos.online
+# https://www.medeirosveiculos.online
 User-agent: *
 Allow: /
 
-Sitemap: https://medeirosveiculos.online/sitemap.xml
+Sitemap: https://www.medeirosveiculos.online/sitemap.xml
 
-Disallow: /api/ 
+Disallow: /api/
+Disallow: /crm/

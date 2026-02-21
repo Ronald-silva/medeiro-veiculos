@@ -9,21 +9,24 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; font-src 'self' https: data:; connect-src 'self' https: wss:;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
-    
+
     <!-- PWA -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="mask-icon" href="/favicon.svg" color="#003B7E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#003B7E" />
-    
+
     <!-- SEO -->
     <title>Medeiros Veículos - Seminovos Premium em Fortaleza</title>
-    <meta name="description" content="Medeiros Veículos - Encontre os melhores seminovos premium de Fortaleza com as melhores condições de financiamento." />
-    <meta name="keywords" content="seminovos fortaleza, carros usados fortaleza, financiamento de carros, honda hrv, toyota corolla, jeep compass, carros premium, financiamento facilitado" />
+    <meta name="description" content="Medeiros Veículos - Seminovos premium em Fortaleza/CE. Carros e motos revisados com garantia, financiamento facilitado e atendimento 24h via WhatsApp." />
+    <meta name="keywords" content="seminovos fortaleza, carros usados fortaleza, motos fortaleza, financiamento de carros, toyota SW4, mitsubishi L200, honda HR-V, kawasaki ninja, seminovos ceará" />
     <meta name="author" content="Medeiros Veículos" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    
+
+    <!-- Canonical - evita conteúdo duplicado www vs não-www -->
+    <link rel="canonical" href="https://www.medeirosveiculos.online/" />
+
     <!-- Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,9 +43,9 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.medeirosveiculos.online/" />
     <meta property="og:title" content="Medeiros Veículos - Seminovos Premium em Fortaleza" />
-    <meta property="og:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
-    <meta property="og:image" content="https://medeirosveiculos.online/og-image.png" />
-    <meta property="og:image:alt" content="Medeiros Veículos - Showroom de carros seminovos premium" />
+    <meta property="og:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros e motos revisados com garantia de procedência." />
+    <meta property="og:image" content="https://www.medeirosveiculos.online/og-image.png" />
+    <meta property="og:image:alt" content="Medeiros Veículos - Showroom de seminovos premium em Fortaleza" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content="Medeiros Veículos" />
 
@@ -50,17 +53,26 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://www.medeirosveiculos.online/" />
     <meta name="twitter:title" content="Medeiros Veículos - Seminovos Premium em Fortaleza" />
-    <meta name="twitter:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência." />
-    <meta name="twitter:image" content="https://medeirosveiculos.online/og-image.png" />
+    <meta name="twitter:description" content="Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros e motos revisados com garantia de procedência." />
+    <meta name="twitter:image" content="https://www.medeirosveiculos.online/og-image.png" />
 
-    <!-- Schema.org -->
+    <!-- Schema.org - AutoDealer completo para Google Meu Negócio e Google Ads -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "AutoDealer",
+        "@id": "https://www.medeirosveiculos.online/#business",
         "name": "Medeiros Veículos",
-        "image": "https://medeirosveiculos.online/logo.png",
-        "description": "Os melhores seminovos de Fortaleza com as melhores condições de financiamento. Carros revisados e garantia de procedência.",
+        "legalName": "Medeiros Veículos",
+        "image": "https://www.medeirosveiculos.online/og-image.png",
+        "logo": "https://www.medeirosveiculos.online/favicon.svg",
+        "description": "Seminovos premium em Fortaleza/CE. Carros e motos revisados com garantia, financiamento facilitado e atendimento 24h via WhatsApp.",
+        "url": "https://www.medeirosveiculos.online",
+        "email": "contato@medeirosveiculos.online",
+        "telephone": "+5585920021150",
+        "priceRange": "R$ 8.000 - R$ 200.000",
+        "currenciesAccepted": "BRL",
+        "paymentAccepted": "Cash, Credit Card, Financing",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "Av. Américo Barreira, 909 - Loja 03",
@@ -74,16 +86,20 @@
           "latitude": "-3.7319",
           "longitude": "-38.5267"
         },
-        "url": "https://www.medeirosveiculos.online",
-        "email": "contato@medeirosveiculos.online",
-        "telephone": "+5585920021150",
+        "hasMap": "https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE",
         "contactPoint": {
           "@type": "ContactPoint",
           "telephone": "+5585920021150",
           "email": "contato@medeirosveiculos.online",
           "contactType": "customer service",
           "areaServed": "BR",
-          "availableLanguage": "Portuguese"
+          "availableLanguage": "Portuguese",
+          "hoursAvailable": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+            "opens": "08:00",
+            "closes": "17:00"
+          }
         },
         "openingHoursSpecification": [
           {
