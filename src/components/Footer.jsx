@@ -21,6 +21,15 @@ export default function Footer() {
               </li>
               <li>
                 <a
+                  href="mailto:contato@medeirosveiculos.online"
+                  className="hover:text-accent"
+                >
+                  <i className="fas fa-envelope mr-2"></i>
+                  contato@medeirosveiculos.online
+                </a>
+              </li>
+              <li>
+                <a
                   href="https://www.google.com/maps/search/?api=1&query=Av.+Am%C3%A9rico+Barreira,+909+-+Loja+03,+Fortaleza+-+CE"
                   target="_blank"
                   rel="noopener noreferrer"
