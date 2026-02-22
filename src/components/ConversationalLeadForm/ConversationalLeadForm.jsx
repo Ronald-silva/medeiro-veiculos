@@ -74,12 +74,21 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
 
     // Dispara evento Lead no Facebook Pixel na primeira mensagem (com UTM)
     const isFirstUserMessage = messages.filter(m => m.role === 'user').length === 0
-    if (isFirstUserMessage && typeof window !== 'undefined' && window.fbq) {
-      const leadEventData = getPixelEventData({
-        vehicle: initialContext?.vehicle,
-        category: 'Interesse'
-      })
-      window.fbq('track', 'Lead', leadEventData)
+    if (isFirstUserMessage && typeof window !== 'undefined') {
+      if (window.fbq) {
+        const leadEventData = getPixelEventData({
+          vehicle: initialContext?.vehicle,
+          category: 'Interesse'
+        })
+        window.fbq('track', 'Lead', leadEventData)
+      }
+      // GA4: dispara generate_lead na primeira mensagem
+      if (window.gtag) {
+        window.gtag('event', 'generate_lead', {
+          event_category: 'chat',
+          event_label: 'primeira_mensagem'
+        })
+      }
     }
 
     // Limpa quick replies após primeira interação
@@ -119,6 +128,22 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
         // (isso pode ser expandido no futuro)
         if (response.quickReplies) {
           setQuickReplies(response.quickReplies)
+        }
+
+        // GA4: dispara evento de conversão baseado na tool chamada pela IA
+        if (typeof window !== 'undefined' && window.gtag) {
+          if (response.toolCalled === 'save_lead') {
+            window.gtag('event', 'qualify_lead', {
+              event_category: 'lead',
+              event_label: 'camila_qualificou'
+            })
+          }
+          if (response.toolCalled === 'schedule_visit') {
+            window.gtag('event', 'close_convert_lead', {
+              event_category: 'lead',
+              event_label: 'camila_agendou'
+            })
+          }
         }
       } else {
         // Mensagem de erro
