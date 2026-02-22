@@ -11,11 +11,11 @@ export function calculateLeadScore(leadData) {
   if (leadData.orcamento) {
     const budgetKey = Object.keys(QUALIFICATION_SCORE_RULES.budget)
       .find(key => leadData.orcamento.toLowerCase().includes(key.replace('k', '')))
-    if (budgetKey) score += QUALIFICATION_SCORE_RULES.budget[budgetKey] * 0.4
+    if (budgetKey) score += QUALIFICATION_SCORE_RULES.budget[budgetKey] * 0.3  // era 0.4
   }
 
   if (leadData.urgencia) {
-    score += QUALIFICATION_SCORE_RULES.urgency[leadData.urgencia] * 0.3
+    score += QUALIFICATION_SCORE_RULES.urgency[leadData.urgencia] * 0.4  // era 0.3 — urgência vale mais
   }
 
   if (leadData.formaPagamento) {

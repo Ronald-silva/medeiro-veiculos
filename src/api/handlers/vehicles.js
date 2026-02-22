@@ -78,7 +78,7 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
       query = query.lte('price', maxBudget);
     }
 
-    query = query.order('price', { ascending: false }).limit(limit);
+    query = query.order('price', { ascending: true }).limit(limit);
 
     // Filtrar por tipo se especificado — normaliza para valores reais do banco
     if (vehicleTypes && vehicleTypes.length > 0) {

@@ -39,7 +39,7 @@ const CONFIG = {
   model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
   maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
   temperature: 0.3,  // Baixa para respostas mais consistentes e evitar alucinações
-  historyLimit: 15   // Histórico completo para contexto
+  historyLimit: 30   // Histórico para contexto (aumentado para reduzir perda de contexto em conversas longas)
 }
 
 /**
