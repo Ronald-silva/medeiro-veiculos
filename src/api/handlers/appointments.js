@@ -604,7 +604,7 @@ export async function scheduleVisit(params) {
         success: true,
         appointmentId: dbResult.appointmentId,
         leadId: leadId,
-        message: `Perfeito! Agendado para ${displayDate} às ${displayTime}. O ${STORE_INFO.sellerName} vai te receber! Vou mandar uma confirmação antes.`
+        message: `Perfeito! Agendado para ${displayDate} às ${displayTime} com o ${STORE_INFO.sellerName}. Qualquer dúvida é só me chamar aqui!`
       };
     }
 
@@ -615,7 +615,7 @@ export async function scheduleVisit(params) {
 
     return {
       success: true,
-      message: `Anotado! Vou repassar para o ${STORE_INFO.sellerName} entrar em contato pelo WhatsApp ${params.phone} para confirmar o horário.`
+      message: `Anotado! O ${STORE_INFO.sellerName} estará esperando você. Qualquer dúvida é só me chamar aqui!`
     };
   } catch (error) {
     logger.error('Error in scheduleVisit:', error);
