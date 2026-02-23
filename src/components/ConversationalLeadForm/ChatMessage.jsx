@@ -1,6 +1,17 @@
 import { motion } from 'framer-motion'
 import ConsultoraAvatar from '../ConsultoraAvatar'
 
+// Converte URLs no texto em links clicáveis
+function renderWithLinks(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+  return parts.map((part, i) =>
+    urlRegex.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 break-all">{part}</a>
+      : part
+  )
+}
+
 export default function ChatMessage({ message, isUser }) {
   return (
     <motion.div
@@ -21,7 +32,7 @@ export default function ChatMessage({ message, isUser }) {
             : 'bg-gray-100 text-gray-800 rounded-bl-none'
         }`}
       >
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">{renderWithLinks(message.content)}</p>
         <span className={`text-xs mt-1 block ${isUser ? 'text-white/70' : 'text-gray-500'}`}>
           {new Date(message.timestamp || Date.now()).toLocaleTimeString('pt-BR', {
             hour: '2-digit',
