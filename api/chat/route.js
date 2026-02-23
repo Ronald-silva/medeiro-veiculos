@@ -357,6 +357,8 @@ export async function POST(request) {
     }
 
     userMessage += `\n${dateTimeContext}`
+    // Contexto do canal: chat do site (não WhatsApp)
+    userMessage += `\n[Canal: chat do site - NUNCA diga "já enviei foto" ou "enviei imagem". Só mencione o catálogo se o cliente pedir fotos explicitamente.]`
 
     // Adiciona Intent Score como contexto para a IA
     if (intentScore) {
