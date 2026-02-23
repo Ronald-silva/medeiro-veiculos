@@ -286,32 +286,48 @@ async function validateAppointmentParams(params) {
 /**
  * Busca ou cria lead pelo telefone
  */
-async function findOrCreateLead(phone, customerName) {
+async function findOrCreateLead(phone, customerName, source = 'whatsapp') {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    // Limpa o telefone
+    // Limpa o telefone - tenta com e sem código do país
     const cleanPhone = phone.replace(/\D/g, '');
+    // Tenta variações do número (com e sem 55 do Brasil)
+    const phoneVariants = [cleanPhone];
+    if (cleanPhone.startsWith('55') && cleanPhone.length >= 12) {
+      phoneVariants.push(cleanPhone.slice(2)); // sem código do país
+    } else if (cleanPhone.length <= 11) {
+      phoneVariants.push('55' + cleanPhone); // com código do país
+    }
 
-    // Busca lead existente
-    const { data: existingLead } = await supabase
-      .from('leads')
-      .select('id, status, score')
-      .eq('whatsapp', cleanPhone)
-      .single();
+    // Busca lead existente (tenta todas as variações do número)
+    let existingLead = null;
+    for (const variant of phoneVariants) {
+      const { data } = await supabase
+        .from('leads')
+        .select('id, status, score')
+        .eq('whatsapp', variant)
+        .maybeSingle();
+      if (data) { existingLead = data; break; }
+    }
 
     if (existingLead) {
       return existingLead;
     }
 
-    // Cria novo lead se não existe
+    // Cria novo lead se não existe - com campos mínimos seguros
     const { data: newLead, error } = await supabase
       .from('leads')
       .insert([{
         whatsapp: cleanPhone,
-        name: customerName,
+        name: customerName || 'Cliente',
         status: 'novo',
-        source: 'whatsapp',
+        source: source,
+        score: 30,
+        temperature: 'morno',
+        budget_max: 0,
+        budget_text: 'não informado',
+        urgency_level: 'pesquisando',
         first_contact_at: new Date().toISOString(),
         last_contact_at: new Date().toISOString()
       }])
@@ -390,6 +406,8 @@ function prepareAppointmentData(params, leadId = null) {
 
   return {
     lead_id: leadId,
+    customer_name: customerName || null,   // fallback quando lead_id é null
+    customer_phone: phone ? phone.replace(/\D/g, '') : null, // fallback quando lead_id é null
     scheduled_date: scheduledDate,
     scheduled_time: preferredTime || '14:00',
     visit_type: visitType || 'visita',
@@ -495,7 +513,9 @@ export async function scheduleVisit(params) {
     });
 
     // 1. Busca ou cria lead pelo telefone
-    const lead = await findOrCreateLead(params.phone, params.customerName);
+    // Detecta a origem: se o phone parece número de WhatsApp com prefixo whatsapp: é WhatsApp, senão é site
+    const source = params.conversationId?.startsWith('site_') ? 'site' : 'whatsapp';
+    const lead = await findOrCreateLead(params.phone, params.customerName, source);
     const leadId = lead?.id || null;
 
     logger.info('Scheduling appointment for lead:', {
