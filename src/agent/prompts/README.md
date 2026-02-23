@@ -1,108 +1,70 @@
-# Modular AI Agent Prompts
+# Sistema de Prompts — Camila | Medeiros Veículos
 
-This directory contains the modularized system prompts for the Medeiros Veículos AI Sales Agent (Camila).
+Diretório com o sistema de prompt da agente de IA de vendas **Camila**.
 
-## Structure
+## Arquitetura Atual
 
-The original 680-line monolithic prompt has been split into **19 focused, maintainable modules**:
+O prompt é **estático e centralizado** — um único `AGENT_SYSTEM_PROMPT` exportado pelo `index.js`, com o inventário dinâmico injetado via `${INVENTORY}`.
 
-### Core Identity & Configuration
-- **identity.js** (14 lines) - Agent identity, expertise, and primary objective
-- **datetime.js** (30 lines) - Date/time handling, greetings, and temporal intelligence
-- **transparency.js** (47 lines) - AI transparency, human handoff rules, and Adel mention protocol
-
-### Sales Methodologies
-- **spin.js** (36 lines) - SPIN Selling methodology (Situation, Problem, Implication, Need)
-- **bant.js** (34 lines) - BANT Framework (Budget, Authority, Need, Timeline)
-- **sandler.js** (32 lines) - Sandler System (Pain > Budget > Decision)
-- **challenger-sale.js** (14 lines) - Challenger Sale approach for reframing beliefs
-
-### Rapport & Persuasion
-- **rapport.js** (31 lines) - Building emotional connection and mirroring
-- **storytelling.js** (17 lines) - Real success stories for sales
-- **emotional-triggers.js** (31 lines) - 5 core psychological triggers (FOMO, Status, Security, Freedom, Belonging)
-
-### Sales Process
-- **rules.js** (28 lines) - Absolute rules (no hallucination, short responses, feminine tone)
-- **funnel.js** (37 lines) - 6-stage sales funnel (Opening > Qualification > Recommendation > Value > Scheduling > Objections)
-- **objections.js** (47 lines) - 3-level objection handling framework
-- **financing.js** (19 lines) - Financing discussion protocol (avoid specific values online)
-- **scheduling.js** (101 lines) - Comprehensive scheduling rules, business hours, and examples
-
-### Business Information
-- **store-location.js** (6 lines) - Store address, hours, contact info
-- **inventory.js** (14 lines) - Current vehicle inventory overview
-
-### Training & Examples
-- **examples.js** (65 lines) - 3 complete conversation examples demonstrating methodologies
-- **closing.js** (25 lines) - Golden rules and motivational closing
-
-### Index
-- **index.js** (93 lines) - Imports all modules and combines them into `AGENT_SYSTEM_PROMPT`
-
-## Usage
-
-Import the combined prompt from the index:
-
-```javascript
-import { AGENT_SYSTEM_PROMPT } from './agent/prompts/index.js'
+```
+src/agent/prompts/
+├── index.js          # Exporta AGENT_SYSTEM_PROMPT (único consumidor: api/chat/route.js)
+├── inventory.js      # Inventário dinâmico do Supabase
+├── identity.js       # Perfil e valores da Camila (referência)
+├── rules.js          # Regras absolutas de comportamento (referência)
+├── store-location.js # Endereço, horários e contato da loja (referência)
+├── examples.js       # Exemplos de conversas bem-sucedidas (referência)
+└── README.md
 ```
 
-Or import individual sections for customization:
+## Como Funciona
 
 ```javascript
-import { SPIN } from './agent/prompts/spin.js'
-import { BANT } from './agent/prompts/bant.js'
-import { EMOTIONAL_TRIGGERS } from './agent/prompts/emotional-triggers.js'
+// index.js
+import { INVENTORY } from './inventory.js'
 
-// Create custom prompt
-const customPrompt = `${SPIN}\n\n---\n\n${BANT}`
+export const AGENT_SYSTEM_PROMPT = `
+  ... prompt completo da Camila ...
+  ${INVENTORY}   ← único conteúdo dinâmico
+`
 ```
 
-## Benefits of Modularization
+```javascript
+// api/chat/route.js
+import { AGENT_SYSTEM_PROMPT } from '../../src/constants/agentPrompts.js'
 
-1. **Maintainability** - Easy to update specific sections without affecting others
-2. **Testability** - Test individual methodologies independently
-3. **Reusability** - Mix and match sections for different agent configurations
-4. **Collaboration** - Multiple team members can work on different sections
-5. **Version Control** - Clear git diffs when specific techniques are updated
-6. **Documentation** - Each file serves as self-documenting sales methodology reference
+// Passado diretamente como system message para Claude
+anthropic.messages.create({
+  system: AGENT_SYSTEM_PROMPT,
+  ...
+})
+```
 
-## File Size Distribution
+## O Prompt Inclui
 
-- **Smallest**: store-location.js (6 lines)
-- **Largest**: scheduling.js (101 lines)
-- **Average**: ~35 lines per module
-- **Total**: 721 lines (includes separators in index.js)
+| Seção | Descrição |
+|-------|-----------|
+| IDENTIDADE | Camila é IA, vendedora da Medeiros Veículos, Fortaleza-CE |
+| OBJETIVO PRINCIPAL | Qualificar leads e agendar visitas com o Adel |
+| FORMATO DAS RESPOSTAS | Máx. 3 linhas, 1 pergunta por mensagem, sem textão |
+| REGRAS INVIOLÁVEIS | Sem invenção de dados, sem promessas, sem negociação de preço |
+| FLUXO DE QUALIFICAÇÃO | Lead Quente / Morno / Frio / Não é Lead |
+| SITUAÇÕES ESPECÍFICAS | Nome sujo, comparação com concorrente, lead agressivo |
+| AGENDAMENTO | Quando e como oferecer horários com o Adel |
+| TOM DE VOZ | Natural, direto, empático, sem excessos |
+| INFORMAÇÕES DA LOJA | WhatsApp, horários, localização, vendedor |
+| CHECKLIST | Verificação antes de cada resposta |
+| INVENTORY | Estoque atual puxado do Supabase |
 
-## Migration from Original
+## Atualização
 
-The original `src/constants/agentPrompts.js` file contained the AGENT_SYSTEM_PROMPT as a single 680-line string.
+Para atualizar o comportamento da Camila, edite diretamente o template em `index.js`.
 
-To migrate:
+Para atualizar o estoque, os dados vêm automaticamente do Supabase via `inventory.js` — não é necessário editar manualmente.
 
-1. Update imports in files that use `AGENT_SYSTEM_PROMPT`:
-   ```javascript
-   // OLD
-   import { AGENT_SYSTEM_PROMPT } from '../constants/agentPrompts.js'
+## Histórico
 
-   // NEW
-   import { AGENT_SYSTEM_PROMPT } from '../agent/prompts/index.js'
-   ```
-
-2. (Optional) Keep the original file for backward compatibility or remove after migration is complete.
-
-## Maintenance Guidelines
-
-When updating prompts:
-
-1. Identify which module contains the section to update
-2. Edit only that specific file
-3. Maintain the export format: `export const SECTION_NAME = \`...\``
-4. Test the combined prompt via index.js
-5. Update this README if adding new modules
-
-## Version
-
-Created: 2026-01-07
-Based on: agentPrompts.js (Version ELITE SALES - Updated 26/12/2025)
+| Data | Mudança |
+|------|---------|
+| 2026-01-07 | Arquitetura modular criada (19 módulos) |
+| 2026-02-23 | Refatoração: prompt único estático, 17 módulos obsoletos removidos |

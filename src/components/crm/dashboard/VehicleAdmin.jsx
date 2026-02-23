@@ -12,10 +12,11 @@ import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from '../../
 import ImageUpload from '../ImageUpload'
 
 const VEHICLE_TYPES = [
-  { value: 'car', label: 'Carro' },
-  { value: 'suv', label: 'SUV' },
-  { value: 'pickup', label: 'Picape' },
-  { value: 'motorcycle', label: 'Moto' }
+  { value: 'Hatch', label: 'Hatch' },
+  { value: 'Sedan', label: 'Sedan' },
+  { value: 'SUV', label: 'SUV' },
+  { value: 'Picape', label: 'Picape' },
+  { value: 'Moto', label: 'Moto' }
 ]
 
 const FUEL_TYPES = [

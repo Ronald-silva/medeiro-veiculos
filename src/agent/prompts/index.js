@@ -2,28 +2,7 @@
 // CAMILA 2.0 - SISTEMA DE PROMPTS CENTRAL
 // ============================================
 
-import { IDENTITY } from './identity.js'
-import { DATETIME } from './datetime.js'
-import { TRANSPARENCY } from './transparency.js'
-import { SPIN } from './spin.js'
-import { BANT } from './bant.js'
-import { RAPPORT } from './rapport.js'
-import { STORYTELLING } from './storytelling.js'
-import { EMOTIONAL_TRIGGERS } from './emotional-triggers.js'
-import { CHALLENGER_SALE } from './challenger-sale.js'
-import { SANDLER } from './sandler.js'
-import { RULES } from './rules.js'
-import { FUNNEL } from './funnel.js'
-import { OBJECTIONS } from './objections.js'
-import { FINANCING } from './financing.js'
-import { SCHEDULING } from './scheduling.js'
-import { STORE_LOCATION } from './store-location.js'
 import { INVENTORY } from './inventory.js'
-import { EXAMPLES } from './examples.js'
-import { CLOSING } from './closing.js'
-import { PSYCHOLOGY, OBJECTION_HANDLERS } from './psychology.js'
-import { PERSONALIZATION, getPersonaPrompt, getTemperaturePrompt } from './personalization.js'
-import { findSimilarSuccessfulConversations, formatExamplesForPrompt } from '../../lib/fewShotLearning.js'
 
 // ============================================
 // PROMPT ESTATICO (compatibilidade)
@@ -48,6 +27,24 @@ Seu único objetivo é **qualificar leads e agendar visitas presenciais** na loj
 3. **ENCERRAR EDUCADAMENTE** — não é lead (spam, fornecedor, pergunta irrelevante)
 
 Você **NÃO vende carros**. Você **NÃO negocia preços**. Você **NÃO fecha negócios**. Você agenda visitas.
+
+---
+
+## FORMATO DAS RESPOSTAS
+
+Você está no **WhatsApp**. Brasileiro não lê textão. Siga estas regras de formato sem exceção:
+
+- **Máximo 3 linhas por resposta** — se precisar de mais, está errado, refaça
+- **1 pergunta por mensagem** — nunca liste múltiplas perguntas
+- **Sem blocos de texto** — sem parágrafos longos, sem listas numeradas
+- **Tom de conversa** — escreva como fala, não como redação
+- **Se não tem o que o cliente quer:** diga em 1 frase, capture o contato, encerre
+
+**Exemplos do que NÃO fazer:**
+> ❌ "Olha Ronald, vou ser sincera contigo: no momento não tenho opções... Mas deixa eu te perguntar... E sobre o nome sujo... Você conseguiria juntar mais?"
+
+**Como deve ser:**
+> ✅ "Ronald, com R$ 7 mil de entrada fica difícil no nosso estoque agora. Você tem algum carro pra dar de troca junto?"
 
 ---
 
@@ -87,8 +84,12 @@ Você **NÃO vende carros**. Você **NÃO negocia preços**. Você **NÃO fecha 
 ### PASSO 1 — SAUDAÇÃO
 Cumprimente de forma breve e natural. Sem exageros, sem emojis excessivos.
 
-**Exemplo:**
-> "Oi [nome]! Tudo bem? Sou a Camila, da Medeiros Veículos. Como posso te ajudar?"
+- Se o cliente já te chamou pelo nome (ex: "bom dia Camila"), **não se apresente** — ele já sabe quem você é. Responda apenas ao cumprimento e pergunte como pode ajudar.
+- Se o cliente não usou seu nome, apresente-se brevemente na primeira mensagem.
+
+**Exemplos:**
+> Cliente diz "oi" → "Oi! Tudo bem? Sou a Camila, da Medeiros Veículos. Como posso te ajudar?"
+> Cliente diz "bom dia Camila" → "Bom dia! Como posso te ajudar?"
 
 ### PASSO 2 — COLETA DE INFORMAÇÕES (QUALIFICAÇÃO)
 Extraia estas informações ao longo da conversa, **sem fazer interrogatório**. Não pergunte tudo de uma vez. Colete naturalmente conforme o papo flui.
@@ -171,6 +172,13 @@ Extraia estas informações ao longo da conversa, **sem fazer interrogatório**.
 - Redirecione para solução: "Desculpa pela demora! Me diz o que você precisa que resolvo agora"
 - **NÃO use emojis tristes (😔) nem excessivamente alegres (😊) com cliente irritado** — tom neutro e profissional
 
+### CLIENTE PEDE FOTOS / IMAGENS
+- Chame `recommend_vehicles` para buscar o veículo — o sistema envia 1 foto automaticamente
+- Após o resultado, indique o catálogo: "Você pode ver mais fotos aqui: https://www.medeirosveiculos.online/catalogo"
+- **NUNCA diga que já enviou fotos sem ter chamado recommend_vehicles**
+- **NUNCA diga "não consigo enviar fotos"**
+- **NÃO convide para visita só porque pediu foto** — qualifique antes
+
 ### PERGUNTAS TÉCNICAS (consumo, manutenção, ficha técnica)
 - Se não tiver a informação específica, não invente
 - Redirecione: "Consumo e manutenção variam bastante por modelo e estado do carro. O Adel pode te detalhar tudo pessoalmente"
@@ -238,6 +246,7 @@ Confirme o agendamento com:
 - **Localização:** Fortaleza-CE
 - **Produtos:** Carros e motos seminovos
 - **Aceita troca:** Sim, com avaliação presencial
+- **Catálogo com fotos:** https://www.medeirosveiculos.online/catalogo
 
 ---
 
@@ -258,337 +267,3 @@ Antes de enviar cada resposta, verifique:
 
 ${INVENTORY}`
 
-// ============================================
-// BUILDER DE PROMPT DINAMICO (CAMILA 2.0)
-// ============================================
-
-/**
- * Formata contexto do cliente para incluir no prompt
- */
-function formatContextForPrompt(context) {
-  if (!context) return '';
-
-  let contextText = '';
-
-  if (context.customer) {
-    contextText += `\n📋 PERFIL DO CLIENTE:`;
-    if (context.customer.name) contextText += `\n- Nome: ${context.customer.name}`;
-    if (context.customer.persona && context.customer.persona !== 'desconhecido') {
-      contextText += `\n- Perfil: ${context.customer.persona}`;
-    }
-    if (context.customer.budget) {
-      contextText += `\n- Orcamento: R$ ${context.customer.budget.toLocaleString('pt-BR')}`;
-    }
-    if (context.customer.preferences?.length) {
-      contextText += `\n- Preferencias: ${context.customer.preferences.join(', ')}`;
-    }
-    if (context.customer.painPoints?.length) {
-      contextText += `\n- Dores identificadas: ${context.customer.painPoints.join(', ')}`;
-    }
-  }
-
-  if (context.previousContext) {
-    contextText += `\n\n📝 CONTEXTO ANTERIOR:\n${context.previousContext}`;
-  }
-
-  if (context.keyFacts && Object.keys(context.keyFacts).length > 0) {
-    contextText += `\n\n🔑 FATOS IMPORTANTES:`;
-    for (const [key, value] of Object.entries(context.keyFacts)) {
-      contextText += `\n- ${key}: ${value}`;
-    }
-  }
-
-  return contextText;
-}
-
-/**
- * Constroi o system prompt dinamico e personalizado
- * @param {Object} options - Opcoes de personalizacao
- * @param {Object} options.context - Contexto da memoria (cliente, fatos, resumo)
- * @param {string} options.persona - Persona do cliente (decisor_rapido, analitico, etc)
- * @param {string} options.temperature - Temperatura do lead (frio, morno, quente, muito_quente)
- * @param {string} options.currentDate - Data atual
- * @param {string} options.currentTime - Hora atual
- * @returns {string} System prompt completo e personalizado
- */
-export function buildDynamicPrompt(options = {}) {
-  const {
-    context = null,
-    persona = 'desconhecido',
-    temperature = 'morno',
-    currentDate = new Date().toLocaleDateString('pt-BR'),
-    currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  } = options;
-
-  const sections = [];
-
-  // 1. Identidade
-  sections.push(IDENTITY);
-
-  // 2. Data/hora e localizacao
-  sections.push(`📅 Data: ${currentDate} | 🕐 Hora: ${currentTime}`);
-  sections.push(STORE_LOCATION);
-
-  // 3. Contexto do cliente (se disponivel)
-  if (context) {
-    const contextText = formatContextForPrompt(context);
-    if (contextText) {
-      sections.push(`
-═══════════════════════════════════════════════
-🧠 MEMORIA DO CLIENTE
-═══════════════════════════════════════════════
-${contextText}`);
-    }
-  }
-
-  // 4. Personalizacao por persona
-  if (persona && persona !== 'desconhecido') {
-    sections.push(`
-═══════════════════════════════════════════════
-🎭 PERSONALIZACAO ATIVA
-═══════════════════════════════════════════════
-${getPersonaPrompt(persona)}`);
-  }
-
-  // 5. Personalizacao por temperatura
-  if (temperature) {
-    sections.push(getTemperaturePrompt(temperature));
-  }
-
-  // 6. Regras absolutas (CRITICO)
-  sections.push(`
-═══════════════════════════════════════════════
-🚨 REGRAS ABSOLUTAS
-═══════════════════════════════════════════════
-${RULES}`);
-
-  // 7. Inventario
-  sections.push(INVENTORY);
-
-  // 8. Tecnicas de vendas (resumidas)
-  sections.push(`
-═══════════════════════════════════════════════
-💼 TECNICAS DE VENDAS
-═══════════════════════════════════════════════
-${SPIN}
-
----
-
-${BANT}`);
-
-  // 9. Exemplos
-  sections.push(EXAMPLES);
-
-  // 10. Objecoes comuns
-  sections.push(`
-═══════════════════════════════════════════════
-🛡️ OBJECOES RAPIDAS
-═══════════════════════════════════════════════
-"Ta caro" → "Entendo! Qual valor voce tinha em mente?"
-"Vou pensar" → "Claro! O que voce quer pensar? Posso ajudar"
-"Preciso falar com marido/esposa" → "Perfeito! Traz junto. Qual dia bom?"
-"Nao tenho entrada" → "Tranquilo! Financia 100%. Quer simular?"
-"To so pesquisando" → "Otimo! O que voce ja viu? Te ajudo a comparar"`);
-
-  return sections.join('\n\n---\n\n');
-}
-
-/**
- * Constroi prompt compacto para contexto limitado
- */
-export function buildCompactPrompt(options = {}) {
-  const {
-    currentDate = new Date().toLocaleDateString('pt-BR'),
-    currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  } = options;
-
-  return `${IDENTITY}
-
-📅 ${currentDate} | 🕐 ${currentTime}
-
-${STORE_LOCATION}
-
-${RULES}
-
-${INVENTORY}
-
-LEMBRE-SE:
-- Mensagens CURTAS (2-3 linhas max)
-- UMA pergunta por vez
-- NUNCA invente veiculos - use recommend_vehicles
-- NUNCA diga "nao entendi" - interprete o contexto
-- Seja HUMANA, calorosa, direta`;
-}
-
-// ============================================
-// EXPORTS
-// ============================================
-
-export {
-  IDENTITY,
-  DATETIME,
-  TRANSPARENCY,
-  SPIN,
-  BANT,
-  RAPPORT,
-  STORYTELLING,
-  EMOTIONAL_TRIGGERS,
-  CHALLENGER_SALE,
-  SANDLER,
-  RULES,
-  FUNNEL,
-  OBJECTIONS,
-  FINANCING,
-  SCHEDULING,
-  STORE_LOCATION,
-  INVENTORY,
-  EXAMPLES,
-  CLOSING,
-  PSYCHOLOGY,
-  OBJECTION_HANDLERS,
-  PERSONALIZATION,
-  getPersonaPrompt,
-  getTemperaturePrompt,
-  formatContextForPrompt,
-  findSimilarSuccessfulConversations,
-  formatExamplesForPrompt
-}
-
-// ============================================
-// BUILDER COM FEW-SHOT LEARNING (CAMILA 2.0+)
-// ============================================
-
-/**
- * Constroi prompt dinamico COM exemplos de conversas bem-sucedidas
- * Usa Few-Shot Learning para melhorar respostas baseado em historico
- *
- * @param {Object} options - Opcoes de personalizacao
- * @param {Object} options.context - Contexto da memoria
- * @param {string} options.persona - Persona do cliente
- * @param {string} options.temperature - Temperatura do lead
- * @param {string} options.currentMessage - Mensagem atual (para buscar exemplos similares)
- * @param {Array} options.recentMessages - Mensagens recentes da conversa
- * @param {string} options.vehicleType - Tipo de veiculo de interesse
- * @param {string} options.budgetRange - Faixa de orcamento
- * @returns {Promise<string>} System prompt com exemplos dinamicos
- */
-export async function buildDynamicPromptWithLearning(options = {}) {
-  const {
-    context = null,
-    persona = 'desconhecido',
-    temperature = 'morno',
-    currentMessage = '',
-    recentMessages = [],
-    vehicleType = null,
-    budgetRange = null,
-    currentDate = new Date().toLocaleDateString('pt-BR'),
-    currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  } = options;
-
-  // Busca exemplos similares de conversas bem-sucedidas
-  let dynamicExamples = '';
-  try {
-    const examples = await findSimilarSuccessfulConversations({
-      currentMessage,
-      customerSegment: persona !== 'desconhecido' ? persona : null,
-      vehicleType,
-      budgetRange
-    });
-
-    if (examples && examples.length > 0) {
-      dynamicExamples = formatExamplesForPrompt(examples);
-    }
-  } catch (error) {
-    console.error('[Prompts] Erro ao buscar few-shot examples:', error);
-  }
-
-  const sections = [];
-
-  // 1. Identidade
-  sections.push(IDENTITY);
-
-  // 2. Data/hora e localizacao
-  sections.push(`📅 Data: ${currentDate} | 🕐 Hora: ${currentTime}`);
-  sections.push(STORE_LOCATION);
-
-  // 3. Contexto do cliente (se disponivel)
-  if (context) {
-    const contextText = formatContextForPrompt(context);
-    if (contextText) {
-      sections.push(`
-═══════════════════════════════════════════════
-🧠 MEMORIA DO CLIENTE
-═══════════════════════════════════════════════
-${contextText}`);
-    }
-  }
-
-  // 4. Personalizacao por persona
-  if (persona && persona !== 'desconhecido') {
-    sections.push(`
-═══════════════════════════════════════════════
-🎭 PERSONALIZACAO ATIVA
-═══════════════════════════════════════════════
-${getPersonaPrompt(persona)}`);
-  }
-
-  // 5. Personalizacao por temperatura
-  if (temperature) {
-    sections.push(getTemperaturePrompt(temperature));
-  }
-
-  // 6. Regras absolutas (CRITICO)
-  sections.push(`
-═══════════════════════════════════════════════
-🚨 REGRAS ABSOLUTAS
-═══════════════════════════════════════════════
-${RULES}`);
-
-  // 7. Inventario
-  sections.push(INVENTORY);
-
-  // 8. Tecnicas de vendas (resumidas)
-  sections.push(`
-═══════════════════════════════════════════════
-💼 TECNICAS DE VENDAS
-═══════════════════════════════════════════════
-${SPIN}
-
----
-
-${BANT}`);
-
-  // 9. EXEMPLOS DINAMICOS (Few-Shot Learning)
-  if (dynamicExamples) {
-    sections.push(`
-═══════════════════════════════════════════════
-🎯 EXEMPLOS DE SUCESSO (Aprenda com conversas que converteram)
-═══════════════════════════════════════════════
-${dynamicExamples}`);
-  } else {
-    // Fallback para exemplos estaticos
-    sections.push(EXAMPLES);
-  }
-
-  // 10. Objecoes comuns
-  sections.push(`
-═══════════════════════════════════════════════
-🛡️ OBJECOES RAPIDAS
-═══════════════════════════════════════════════
-"Ta caro" → "Entendo! Qual valor voce tinha em mente?"
-"Vou pensar" → "Claro! O que voce quer pensar? Posso ajudar"
-"Preciso falar com marido/esposa" → "Perfeito! Traz junto. Qual dia bom?"
-"Nao tenho entrada" → "Tranquilo! Financia 100%. Quer simular?"
-"To so pesquisando" → "Otimo! O que voce ja viu? Te ajudo a comparar"`);
-
-  return sections.join('\n\n---\n\n');
-}
-
-export default {
-  AGENT_SYSTEM_PROMPT,
-  buildDynamicPrompt,
-  buildDynamicPromptWithLearning,
-  buildCompactPrompt,
-  getPersonaPrompt,
-  getTemperaturePrompt
-}

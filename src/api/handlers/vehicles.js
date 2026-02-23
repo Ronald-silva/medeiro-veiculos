@@ -31,15 +31,32 @@ function parseBudget(budget) {
   }
 }
 
-// Normaliza valores de vehicleType enviados pela IA para os valores reais do banco
+// Normaliza vehicleType para TODOS os valores possíveis no banco
+// Evita quebrar quando o DB usa 'moto' em vez de 'motorcycle' (ou vice-versa)
 function normalizeVehicleTypes(types) {
   const map = {
-    'moto': 'motorcycle', 'motocicleta': 'motorcycle', 'motorcycle': 'motorcycle',
-    'carro': 'car', 'car': 'car', 'sedan': 'sedan', 'hatch': 'hatch',
-    'suv': 'suv', 'picape': 'pickup', 'pickup': 'pickup',
-    'caminhao': 'truck', 'caminhão': 'truck', 'truck': 'truck', 'van': 'van',
+    'moto':        ['motorcycle', 'moto', 'motocicleta'],
+    'motocicleta': ['motorcycle', 'moto', 'motocicleta'],
+    'motorcycle':  ['motorcycle', 'moto', 'motocicleta'],
+    'carro':       ['car', 'carro'],
+    'car':         ['car', 'carro'],
+    'sedan':       ['sedan'],
+    'hatch':       ['hatch'],
+    'suv':         ['suv'],
+    'picape':      ['pickup', 'picape'],
+    'pickup':      ['pickup', 'picape'],
+    'caminhao':    ['truck', 'caminhao', 'caminhão'],
+    'caminhão':    ['truck', 'caminhao', 'caminhão'],
+    'truck':       ['truck', 'caminhao', 'caminhão'],
+    'van':         ['van'],
   };
-  return types.map(t => map[t.toLowerCase()] || t.toLowerCase());
+  const normalized = new Set();
+  for (const t of types) {
+    const values = map[t.toLowerCase()];
+    if (values) values.forEach(v => normalized.add(v));
+    else normalized.add(t.toLowerCase());
+  }
+  return [...normalized];
 }
 
 /**
@@ -80,11 +97,13 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
 
     query = query.order('price', { ascending: true }).limit(limit);
 
-    // Filtrar por tipo se especificado — normaliza para valores reais do banco
+    // Filtrar por tipo — usa ilike (case-insensitive) para não quebrar com
+    // variações de capitalização no banco (ex: 'Moto' vs 'moto', 'SUV' vs 'suv')
     if (vehicleTypes && vehicleTypes.length > 0) {
       const normalized = normalizeVehicleTypes(vehicleTypes);
       logger.debug(`[recommend_vehicles] Filtro tipo: ${vehicleTypes.join(',')} → ${normalized.join(',')}`);
-      query = query.in('vehicle_type', normalized);
+      const ilikeConditions = normalized.map(t => `vehicle_type.ilike.${t}`).join(',');
+      query = query.or(ilikeConditions);
     }
 
     const { data: vehicles, error } = await query;
