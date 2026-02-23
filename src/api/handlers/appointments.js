@@ -623,7 +623,7 @@ export async function scheduleVisit(params) {
     // Mesmo com erro, confirma pro usuário para não prejudicar a experiência
     return {
       success: true,
-      message: `Anotado! Vou repassar para nossa equipe entrar em contato no WhatsApp ${params.phone || 'fornecido'}.`
+      message: `Anotado! O ${STORE_INFO.sellerName} estará esperando você. Qualquer dúvida é só me chamar aqui!`
     };
   }
 }
