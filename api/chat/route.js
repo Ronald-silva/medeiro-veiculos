@@ -24,9 +24,6 @@ import {
   saveMessage as saveMessageToDb
 } from '../../src/lib/conversationHistory.js'
 
-// Importa supervisor de validação
-import { validateResponse, applyCorrections, logValidation } from '../../src/lib/supervisor.js'
-
 // === SISTEMAS DE INTELIGÊNCIA AVANÇADA ===
 import { calculatePredictiveIntent } from '../../src/lib/predictiveIntent.js'
 import { getExamplesForPrompt, detectCustomerSegment, detectVehicleInterest, detectBudgetRange } from '../../src/lib/fewShotLearning.js'
@@ -390,53 +387,6 @@ export async function POST(request) {
       result = await chatWithClaude(messages, convId)
     } else {
       result = await chatWithOpenAI(messages, convId)
-    }
-
-    // === SUPERVISOR: Valida resposta ANTES de enviar ===
-    try {
-      const validation = await validateResponse(result.message, {
-        toolResults: result.toolResult,
-        conversationHistory: history,
-        autoCorrect: true
-      })
-
-      // 🚨 BLOQUEIO DE ALUCINAÇÃO: Se detectou alucinação, substitui resposta
-      if (!validation.isValid) {
-        const isHallucination = validation.errors.some(e => e.includes('ALUCINAÇÃO'))
-
-        if (isHallucination) {
-          logger.error('🚨 SUPERVISOR: Bloqueando resposta com alucinação de estoque')
-
-          // Substitui por resposta segura
-          result.message = 'Deixa eu verificar o que temos no estoque pra você! Me conta: qual tipo de carro você procura e qual seu orçamento?'
-          result.hallucinationBlocked = true
-
-          // Loga para análise
-          await logValidation(convId, validation, result.message)
-        } else {
-          // Outros erros (não alucinação) - apenas avisa
-          logger.warn('Supervisor: resposta com erros (não-alucinação)', validation.errors)
-        }
-      }
-
-      // Se houver correções de preço, aplica
-      if (validation.corrections.length > 0) {
-        result.message = applyCorrections(result.message, validation.corrections)
-        logger.info('Supervisor: correções aplicadas', validation.corrections)
-      }
-
-      // Loga validação para análise
-      await logValidation(convId, validation, result.message)
-
-      // Adiciona flag de validação na resposta (para debug)
-      result.validation = {
-        isValid: validation.isValid,
-        errors: validation.errors,
-        warnings: validation.warnings
-      }
-    } catch (validationError) {
-      // Não bloqueia se validação falhar
-      logger.warn('Supervisor: erro na validação', validationError.message)
     }
 
     // Salva no histórico (Upstash Redis com persistência)

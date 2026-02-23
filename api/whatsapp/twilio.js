@@ -36,7 +36,7 @@ const twilioClient = twilio(
 )
 
 const CONFIG = {
-  model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
+  model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
   maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
   temperature: 0.3,  // Baixa para respostas mais consistentes e evitar alucinações
   historyLimit: 30   // Histórico para contexto (aumentado para reduzir perda de contexto em conversas longas)
@@ -383,7 +383,7 @@ function extractTwilioData(body) {
     //   ...
     // }
 
-    const { From, Body, ProfileName, WaId, NumMedia, MediaUrl0, MediaContentType0 } = body
+    const { From, Body, ProfileName, WaId, NumMedia, MediaUrl0, MediaContentType0, MessageSid } = body
 
     if (!From) {
       logger.warn('[Twilio] Missing From field')
@@ -404,6 +404,7 @@ function extractTwilioData(body) {
         phoneNumber,
         message: Body || '', // Pode ter legenda junto com áudio
         pushName,
+        messageSid: MessageSid,
         audioUrl: MediaUrl0,
         audioType: MediaContentType0
       }
@@ -413,7 +414,7 @@ function extractTwilioData(body) {
       // Mídia não-áudio (imagem, vídeo, etc) sem texto
       if (numMedia > 0) {
         logger.info('[Twilio] Non-audio media received, treating as generic message')
-        return { phoneNumber, message: '[Cliente enviou uma imagem/mídia]', pushName }
+        return { phoneNumber, message: '[Cliente enviou uma imagem/mídia]', pushName, messageSid: MessageSid }
       }
       logger.warn('[Twilio] Missing Body field')
       return null
@@ -421,7 +422,7 @@ function extractTwilioData(body) {
 
     logger.debug('[Twilio] Webhook data extracted successfully')
 
-    return { phoneNumber, message: Body, pushName }
+    return { phoneNumber, message: Body, pushName, messageSid: MessageSid }
   } catch (error) {
     logger.error('[Twilio] Error extracting webhook data:', error)
     return null
@@ -433,12 +434,18 @@ function extractTwilioData(body) {
  * Isso permite que o webhook responda imediatamente
  */
 async function processMessageAsync(webhookData) {
-  const { phoneNumber, pushName, audioUrl, audioType } = webhookData
+  const { phoneNumber, pushName, audioUrl, audioType, messageSid } = webhookData
   let { message } = webhookData
   const startTime = Date.now()
 
   try {
     logger.info('[Twilio] ASYNC processing started')
+
+    // Marca mensagem como lida (✓✓ azul) — feedback visual imediato ao cliente
+    if (messageSid) {
+      twilioClient.messages(messageSid).update({ status: 'read' })
+        .catch(err => logger.debug('[Twilio] Mark as read failed (non-critical):', err.message))
+    }
 
     // Se é áudio, transcreve antes de processar
     if (audioUrl) {
