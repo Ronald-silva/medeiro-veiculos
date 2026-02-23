@@ -59,7 +59,7 @@ const openai = USE_OPENAI ? new OpenAI({
 // Configuração - OTIMIZADO PARA EVITAR ALUCINAÇÕES
 const CONFIG = {
   anthropic: {
-    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929',
+    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
     maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS) || 512,
     temperature: 0.3  // Baixa para respostas mais consistentes e factuais
   },
