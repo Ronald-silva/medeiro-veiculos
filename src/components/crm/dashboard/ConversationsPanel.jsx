@@ -113,7 +113,9 @@ function ConversationItem({ conversation, isSelected, onClick }) {
           {conversation.messages_count || 0} msgs
         </span>
       </div>
-      <p className="text-sm text-gray-600 truncate mt-1">{preview}...</p>
+      <p className="text-sm text-gray-600 truncate mt-1">
+        {conversation.first_user_message ? `${preview}...` : preview}
+      </p>
     </div>
   )
 }
@@ -144,6 +146,7 @@ export default function ConversationsPanel() {
       }
 
       const response = await fetch(url)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const data = await response.json()
 
       if (data.success) {
@@ -161,6 +164,7 @@ export default function ConversationsPanel() {
     setLoadingMessages(true)
     try {
       const response = await fetch(`/api/conversations?conversationId=${conversationId}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const data = await response.json()
 
       if (data.success) {
@@ -272,7 +276,7 @@ export default function ConversationsPanel() {
                     </p>
                   </div>
                   <div className="text-right text-xs text-gray-500">
-                    <p>Início: {formatTime(selectedConversation.started_at)}</p>
+                    <p>Início: {formatRelativeDate(selectedConversation.started_at)} às {formatTime(selectedConversation.started_at)}</p>
                     <p>{selectedConversation.messages_count} mensagens</p>
                   </div>
                 </div>

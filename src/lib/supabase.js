@@ -111,6 +111,28 @@ export async function markCommissionAsPaid(saleId) {
   return data[0]
 }
 
+export async function markRonaldAsPaid(saleId) {
+  const { data, error } = await supabase
+    .from('sales')
+    .update({ ronald_paid: true })
+    .eq('id', saleId)
+    .select()
+
+  if (error) throw error
+  return data[0]
+}
+
+export async function markAdelAsPaid(saleId) {
+  const { data, error } = await supabase
+    .from('sales')
+    .update({ adel_paid: true })
+    .eq('id', saleId)
+    .select()
+
+  if (error) throw error
+  return data[0]
+}
+
 // DASHBOARD METRICS
 export async function getDashboardMetrics() {
   const { data, error } = await supabase

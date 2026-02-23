@@ -261,7 +261,7 @@ export default function CRMDashboard() {
                   </div>
                 </div>
                 {/* Últimas Vendas */}
-                <SalesTable sales={sales} showAll={false} />
+                <SalesTable sales={sales} showAll={false} onUpdate={loadData} />
               </>
             )}
             {/* SALES TAB */}
@@ -276,7 +276,7 @@ export default function CRMDashboard() {
                     Nova Venda
                   </button>
                 </div>
-                <SalesTable sales={sales} showAll={true} />
+                <SalesTable sales={sales} showAll={true} onUpdate={loadData} />
               </>
             )}
             {/* LEADS TAB */}

@@ -47,6 +47,17 @@ export default function ExecutiveReport() {
     const totalVendas = sales.length
     const mediaVenda = totalVendas > 0 ? totalVendido / totalVendas : 0
 
+    // Comissões
+    const totalRonald = sales.reduce((sum, s) => sum + Number(s.ronald_commission_value || 0), 0)
+    const totalAdel = sales.reduce((sum, s) => sum + Number(s.adel_commission_value || 0), 0)
+    const totalComissoes = totalRonald + totalAdel
+    const medeirosRecebe = totalVendido - totalComissoes
+
+    const ronaldPago = sales.filter(s => s.ronald_paid).reduce((sum, s) => sum + Number(s.ronald_commission_value || 0), 0)
+    const ronaldPendente = totalRonald - ronaldPago
+    const adelPago = sales.filter(s => s.adel_paid).reduce((sum, s) => sum + Number(s.adel_commission_value || 0), 0)
+    const adelPendente = totalAdel - adelPago
+
     // Leads
     const totalLeads = leads.length
     const leadsFechados = leads.filter(l => l.status === 'fechado').length
@@ -56,7 +67,7 @@ export default function ExecutiveReport() {
     // Taxa de conversão
     const taxaConversao = totalLeads > 0 ? (leadsFechados / totalLeads) * 100 : 0
 
-    // Tempo médio de venda (aproximado - dias desde lead criado até venda)
+    // Tempo médio de venda (dias desde lead criado até venda)
     let tempoMedioVenda = 0
     if (sales.length > 0 && leads.length > 0) {
       const vendasComLead = sales.filter(s => s.lead_id)
@@ -77,6 +88,14 @@ export default function ExecutiveReport() {
       totalVendido,
       totalVendas,
       mediaVenda,
+      totalRonald,
+      totalAdel,
+      totalComissoes,
+      medeirosRecebe,
+      ronaldPago,
+      ronaldPendente,
+      adelPago,
+      adelPendente,
       totalLeads,
       leadsFechados,
       leadsPerdidos,
@@ -209,6 +228,38 @@ export default function ExecutiveReport() {
               </div>
             </div>
 
+            {/* Comissões */}
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Comissões por Venda</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <p className="text-xs font-semibold text-blue-700 uppercase mb-1">Medeiros Recebe</p>
+                  <p className="text-2xl font-bold text-blue-700">{formatCurrency(metrics.medeirosRecebe)}</p>
+                  <p className="text-xs text-blue-600 mt-1">Líquido após comissões</p>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-xs font-semibold text-green-700 uppercase mb-1">Ronald (você)</p>
+                  <p className="text-2xl font-bold text-green-700">{formatCurrency(metrics.totalRonald)}</p>
+                  <div className="flex justify-between text-xs text-green-600 mt-1">
+                    <span>Pago: {formatCurrency(metrics.ronaldPago)}</span>
+                    <span>Pendente: {formatCurrency(metrics.ronaldPendente)}</span>
+                  </div>
+                </div>
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <p className="text-xs font-semibold text-purple-700 uppercase mb-1">Adel</p>
+                  <p className="text-2xl font-bold text-purple-700">{formatCurrency(metrics.totalAdel)}</p>
+                  <div className="flex justify-between text-xs text-purple-600 mt-1">
+                    <span>Pago: {formatCurrency(metrics.adelPago)}</span>
+                    <span>Pendente: {formatCurrency(metrics.adelPendente)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600 border-t pt-3">
+                <span>Total saído em comissões:</span>
+                <span className="font-semibold text-gray-900">{formatCurrency(metrics.totalComissoes)}</span>
+              </div>
+            </div>
+
             {/* Performance de Leads */}
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Performance de Atendimento</h3>
@@ -270,13 +321,16 @@ export default function ExecutiveReport() {
                   ✅ <strong>{metrics.totalVendas} carros vendidos</strong> gerando {formatCurrency(metrics.totalVendido)}
                 </p>
                 <p>
-                  ✅ <strong>{metrics.taxaConversao.toFixed(0)}% de conversão</strong> - {metrics.leadsFechados} vendas de {metrics.totalLeads} interessados
+                  ✅ <strong>Medeiros recebe {formatCurrency(metrics.medeirosRecebe)}</strong> líquido após comissões
                 </p>
                 <p>
-                  ✅ <strong>Vendas em média {Math.round(metrics.tempoMedioVenda)} dias</strong> do primeiro contato até fechar
+                  ✅ <strong>{metrics.taxaConversao.toFixed(0)}% de conversão</strong> — {metrics.leadsFechados} vendas de {metrics.totalLeads} interessados
                 </p>
                 <p>
                   ✅ <strong>Ticket médio de {formatCurrency(metrics.mediaVenda)}</strong> por venda
+                </p>
+                <p>
+                  ✅ <strong>Comissões pendentes:</strong> Ronald {formatCurrency(metrics.ronaldPendente)} · Adel {formatCurrency(metrics.adelPendente)}
                 </p>
               </div>
             </div>
