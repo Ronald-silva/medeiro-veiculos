@@ -58,6 +58,47 @@ export function getUTMParams() {
 }
 
 /**
+ * Detecta veículo de interesse a partir de parâmetros de campanha
+ * Lê ?vehicle= na URL ou infere via utm_campaign/utm_content
+ * Exemplo de link: medeirosveiculos.online/?vehicle=hilux-sw4&utm_source=facebook
+ * @returns {string|null} Nome do veículo ou null
+ */
+export function getCampaignVehicle() {
+  if (typeof window === 'undefined') return null
+
+  // Prioridade 1: parâmetro ?vehicle= na URL (mais explícito)
+  const params = new URLSearchParams(window.location.search)
+  const vehicleParam = params.get('vehicle')
+  if (vehicleParam) {
+    const vehicleNames = {
+      'hilux-sw4': 'Hilux SW4',
+      'hilux': 'Hilux',
+      'hr-v': 'HR-V',
+      'hrv': 'HR-V',
+      'l200': 'L200 Triton',
+      'pajero': 'Pajero Full',
+      'ranger': 'Ranger',
+      's10': 'S10',
+      'tracker': 'Tracker',
+      'compass': 'Compass',
+      'creta': 'Creta'
+    }
+    return vehicleNames[vehicleParam.toLowerCase()] || vehicleParam
+  }
+
+  // Prioridade 2: infere pelo nome da campanha UTM
+  const utm = getUTMParams()
+  const campaign = (utm.utm_campaign || utm.utm_content || '').toLowerCase()
+  if (campaign.includes('hilux') || campaign.includes('sw4')) return 'Hilux SW4'
+  if (campaign.includes('hr-v') || campaign.includes('hrv')) return 'HR-V'
+  if (campaign.includes('l200') || campaign.includes('triton')) return 'L200 Triton'
+  if (campaign.includes('ranger')) return 'Ranger'
+  if (campaign.includes('pajero')) return 'Pajero Full'
+
+  return null
+}
+
+/**
  * Retorna dados de contexto para eventos do Facebook Pixel
  * Combina UTM + informações do veículo
  * @param {object} context - Contexto adicional (vehicle, category)

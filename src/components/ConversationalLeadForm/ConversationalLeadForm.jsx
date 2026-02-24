@@ -43,22 +43,24 @@ export default function ConversationalLeadForm({ isOpen, onClose, initialContext
       if (history.length > 0) {
         setMessages(history)
       } else {
-        // Primeira mensagem de saudação do bot (seguindo o prompt)
+        // Primeira mensagem de saudação - personalizada se vier de campanha
+        const carName = initialContext?.carName
         const welcomeMessage = {
           role: 'assistant',
-          content: 'E aí! Bem-vindo à Medeiros Veículos 🚗\nTô aqui pra te ajudar a achar o carro ideal. Qual tipo de veículo você curte mais?',
+          content: carName
+            ? `Oi! Vi que você se interessou pelo ${carName} 😊\nTô aqui pra tirar suas dúvidas. O que quer saber?`
+            : 'E aí! Bem-vindo à Medeiros Veículos 🚗\nTô aqui pra te ajudar a achar o carro ideal. Qual tipo de veículo você curte mais?',
           timestamp: new Date().toISOString()
         }
         setMessages([welcomeMessage])
         saveMessageToLocal(convId, welcomeMessage)
 
-        // Quick replies iniciais
-        setQuickReplies([
-          'SUV',
-          'Sedan',
-          'Hatch',
-          'Picape'
-        ])
+        // Quick replies iniciais — específicas se vier de campanha
+        setQuickReplies(
+          carName
+            ? ['Qual o preço?', 'Quantos km tem?', 'Quero agendar visita']
+            : ['SUV', 'Sedan', 'Hatch', 'Picape']
+        )
       }
     }
   }, [isOpen, conversationId])

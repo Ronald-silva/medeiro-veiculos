@@ -9,6 +9,7 @@ import Testimonials from './components/Testimonials'
 import Footer from './components/Footer'
 import ConversationalLeadForm from './components/ConversationalLeadForm/ConversationalLeadForm'
 import TrustSignals from './components/conversion/TrustSignals'
+import { getCampaignVehicle } from './lib/utmTracking'
 
 // Lazy load - carrega apenas quando necessário
 const CatalogPage = lazy(() => import('./pages/CatalogPage'))
@@ -19,6 +20,11 @@ const ProtectedRoute = lazy(() => import('./components/crm/ProtectedRoute'))
 
 function HomePage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [chatContext, setChatContext] = useState(() => {
+    // Detecta veículo de campanha na carga inicial da página
+    const campaignVehicle = getCampaignVehicle()
+    return campaignVehicle ? { carName: campaignVehicle } : {}
+  })
 
   const handleCtaClick = () => {
     setIsChatOpen(true)
@@ -28,13 +34,18 @@ function HomePage() {
     setIsChatOpen(false)
   }
 
+  const handleVehicleInterest = (carName) => {
+    if (carName) setChatContext({ carName })
+    setIsChatOpen(true)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header onChatOpen={() => setIsChatOpen(true)} />
       <main>
         <HeroSection onCtaClick={handleCtaClick} />
         <TrustSignals />
-        <VehicleCatalog onVehicleInterest={(carName) => setIsChatOpen(true)} />
+        <VehicleCatalog onVehicleInterest={handleVehicleInterest} />
         <Testimonials />
       </main>
       <Footer />
@@ -43,6 +54,7 @@ function HomePage() {
       <ConversationalLeadForm
         isOpen={isChatOpen}
         onClose={handleChatClose}
+        initialContext={chatContext}
       />
     </div>
   )
