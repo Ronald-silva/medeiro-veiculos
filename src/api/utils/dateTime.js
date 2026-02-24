@@ -126,26 +126,78 @@ export function getNextBusinessDay(date = new Date()) {
 }
 
 /**
- * Converte data do formato brasileiro (DD/MM/YYYY) para ISO (YYYY-MM-DD)
- * @param {string} brazilianDate - Data no formato DD/MM/YYYY
- * @returns {string|null} Data no formato ISO ou null se inválida
+ * Converte data em qualquer formato para ISO (YYYY-MM-DD)
+ * Aceita: DD/MM/YYYY, DD/MM, dia da semana, "amanhã", "hoje", ISO já formatado
+ * @param {string} brazilianDate - Data em qualquer formato
+ * @returns {string} Data no formato ISO (fallback: hoje)
  */
 export function convertBrazilianDateToISO(brazilianDate) {
   try {
-    if (!brazilianDate) return null;
+    if (!brazilianDate) return new Date().toISOString().split('T')[0];
 
-    // Tenta converter formato brasileiro para ISO
-    const dateParts = brazilianDate.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if (dateParts) {
-      // DD/MM/YYYY -> YYYY-MM-DD
-      return `${dateParts[3]}-${dateParts[2]}-${dateParts[1]}`;
+    const str = brazilianDate.trim().toLowerCase();
+    const today = new Date();
+
+    // "hoje"
+    if (str === 'hoje') {
+      return today.toISOString().split('T')[0];
     }
 
-    // Se não for DD/MM/YYYY, retorna como está (pode já ser ISO)
-    return brazilianDate;
+    // "amanhã" / "amanha"
+    if (str === 'amanhã' || str === 'amanha') {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      return tomorrow.toISOString().split('T')[0];
+    }
+
+    // Dias da semana → próxima ocorrência
+    const weekdays = {
+      'domingo': 0,
+      'segunda': 1, 'segunda-feira': 1,
+      'terça': 2, 'terca': 2, 'terça-feira': 2, 'terca-feira': 2,
+      'quarta': 3, 'quarta-feira': 3,
+      'quinta': 4, 'quinta-feira': 4,
+      'sexta': 5, 'sexta-feira': 5,
+      'sábado': 6, 'sabado': 6
+    };
+    const dayName = str.replace(/^(próxima?|proxima?)\s+/, '');
+    if (weekdays[dayName] !== undefined) {
+      const targetDay = weekdays[dayName];
+      const currentDay = today.getDay();
+      let daysAhead = targetDay - currentDay;
+      if (daysAhead <= 0) daysAhead += 7;
+      const target = new Date(today);
+      target.setDate(today.getDate() + daysAhead);
+      return target.toISOString().split('T')[0];
+    }
+
+    // Já está no formato ISO YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+
+    // Formato DD/MM/YYYY
+    const fullDate = brazilianDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (fullDate) {
+      const day = fullDate[1].padStart(2, '0');
+      const month = fullDate[2].padStart(2, '0');
+      return `${fullDate[3]}-${month}-${day}`;
+    }
+
+    // Formato DD/MM (sem ano) → assume ano atual
+    const shortDate = brazilianDate.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (shortDate) {
+      const day = shortDate[1].padStart(2, '0');
+      const month = shortDate[2].padStart(2, '0');
+      return `${today.getFullYear()}-${month}-${day}`;
+    }
+
+    // Fallback: hoje
+    logger.warn('[convertBrazilianDateToISO] Formato não reconhecido, usando hoje:', brazilianDate);
+    return today.toISOString().split('T')[0];
   } catch (error) {
     logger.error('Error converting Brazilian date to ISO:', error);
-    return null;
+    return new Date().toISOString().split('T')[0];
   }
 }
 

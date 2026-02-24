@@ -33,7 +33,7 @@ export default function AppointmentsTable({ appointments, onUpdateStatus, onDele
                   {appointment.lead?.name || appointment.customer_name || 'N/A'}
                 </td>
                 <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-600">
-                  {appointment.lead?.whatsapp || appointment.phone}
+                  {appointment.lead?.whatsapp || appointment.customer_phone || '-'}
                 </td>
                 <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">
                   {appointment.vehicle_interest || '-'}
