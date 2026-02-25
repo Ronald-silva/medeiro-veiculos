@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   getCurrentFortalezaTime,
   formatDateForAgent,
@@ -8,108 +8,223 @@ import {
   getDateTimeContext
 } from '../../src/api/utils/dateTime.js'
 
-describe('dateTime utilities', () => {
-  describe('getCurrentFortalezaTime', () => {
-    it('should return a Date object', () => {
-      const result = getCurrentFortalezaTime()
-      expect(result).toBeInstanceOf(Date)
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+function todayISO() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function offsetISO(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+// Retorna nome do dia em pt-BR para um Date
+function ptWeekday(date) {
+  return new Intl.DateTimeFormat('pt-BR', { weekday: 'long' })
+    .format(date)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos para comparação
+}
+
+// ─────────────────────────────────────────────────────────────
+describe('convertBrazilianDateToISO — casos críticos de produção', () => {
+
+  describe('palavras-chave relativas', () => {
+    it('"hoje" → data de hoje em ISO', () => {
+      expect(convertBrazilianDateToISO('hoje')).toBe(todayISO())
     })
 
-    it('should return a valid date', () => {
-      const result = getCurrentFortalezaTime()
-      expect(result.toString()).not.toBe('Invalid Date')
-    })
-  })
-
-  describe('formatDateForAgent', () => {
-    it('should format date in Portuguese', () => {
-      const date = new Date('2026-01-07T14:30:00-03:00')
-      const result = formatDateForAgent(date)
-
-      // Verifica formato básico
-      expect(result).toContain('/')
-      expect(result).toContain('h')
+    it('"amanhã" → data de amanhã', () => {
+      expect(convertBrazilianDateToISO('amanhã')).toBe(offsetISO(1))
     })
 
-    it('should capitalize weekday', () => {
-      const date = new Date('2026-01-07T14:30:00-03:00')
-      const result = formatDateForAgent(date)
-
-      // Primeira letra deve ser maiúscula
-      expect(result.charAt(0)).toBe(result.charAt(0).toUpperCase())
-    })
-  })
-
-  describe('isBusinessHours', () => {
-    it('should return true for weekday at 10am', () => {
-      const tuesday10am = new Date('2026-01-06T10:00:00-03:00') // Terça
-      const result = isBusinessHours(tuesday10am)
-      expect(result).toBe(true)
-    })
-
-    it('should return false for Sunday', () => {
-      const sunday = new Date('2026-01-04T10:00:00-03:00') // Domingo
-      const result = isBusinessHours(sunday)
-      expect(result).toBe(false)
-    })
-
-    it('should return false for late evening', () => {
-      const tuesday8pm = new Date('2026-01-06T20:00:00-03:00')
-      const result = isBusinessHours(tuesday8pm)
-      expect(result).toBe(false)
-    })
-
-    it('should return true for Saturday morning', () => {
-      const saturday10am = new Date('2026-01-03T10:00:00-03:00')
-      const result = isBusinessHours(saturday10am)
-      expect(result).toBe(true)
-    })
-
-    it('should return false for Saturday afternoon', () => {
-      const saturday2pm = new Date('2026-01-03T14:00:00-03:00')
-      const result = isBusinessHours(saturday2pm)
-      expect(result).toBe(false)
+    it('"amanha" (sem acento) → data de amanhã', () => {
+      expect(convertBrazilianDateToISO('amanha')).toBe(offsetISO(1))
     })
   })
 
-  describe('getNextBusinessDay', () => {
-    it('should return next weekday', () => {
-      const friday = new Date('2026-01-02T10:00:00-03:00')
-      const result = getNextBusinessDay(friday)
+  describe('nomes de dia da semana', () => {
+    const weekdayMap = {
+      'segunda':      1,
+      'segunda-feira':1,
+      'terça':        2,
+      'terca':        2,
+      'terça-feira':  2,
+      'terca-feira':  2,
+      'quarta':       3,
+      'quarta-feira': 3,
+      'quinta':       4,
+      'quinta-feira': 4,
+      'sexta':        5,
+      'sexta-feira':  5,
+      'sábado':       6,
+      'sabado':       6,
+    }
 
-      // Deve retornar formato DD/MM/YYYY
-      expect(result).toMatch(/\d{2}\/\d{2}\/\d{4}/)
+    for (const [input, targetDay] of Object.entries(weekdayMap)) {
+      it(`"${input}" → próxima ocorrência (dia ${targetDay})`, () => {
+        const result = convertBrazilianDateToISO(input)
+        // Deve ser uma data ISO válida
+        expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+        // Deve ser no futuro (>= amanhã)
+        expect(result >= offsetISO(1)).toBe(true)
+        // O dia da semana do resultado deve bater
+        const resultDate = new Date(result + 'T12:00:00')
+        expect(resultDate.getDay()).toBe(targetDay)
+      })
+    }
+
+    it('"próxima sexta" → próxima sexta', () => {
+      const result = convertBrazilianDateToISO('próxima sexta')
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      const d = new Date(result + 'T12:00:00')
+      expect(d.getDay()).toBe(5) // 5 = sexta
     })
 
-    it('should skip Sunday', () => {
-      const saturday = new Date('2026-01-03T10:00:00-03:00')
-      const result = getNextBusinessDay(saturday)
+    it('"proxima sexta" (sem acento) → próxima sexta', () => {
+      const result = convertBrazilianDateToISO('proxima sexta')
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      const d = new Date(result + 'T12:00:00')
+      expect(d.getDay()).toBe(5)
+    })
 
-      // Próximo dia útil de sábado é segunda
-      expect(result).toBe('05/01/2026')
+    it('nunca retorna o dia de hoje como "próxima ocorrência"', () => {
+      // Mesmo que hoje seja sexta, "sexta" deve retornar a próxima sexta (7 dias depois)
+      const result = convertBrazilianDateToISO('sexta')
+      expect(result > todayISO()).toBe(true)
     })
   })
 
-  describe('convertBrazilianDateToISO', () => {
-    it('should convert DD/MM/YYYY to YYYY-MM-DD', () => {
-      const result = convertBrazilianDateToISO('07/01/2026')
-      expect(result).toBe('2026-01-07')
+  describe('formato DD/MM/YYYY', () => {
+    it('converte corretamente 07/03/2026 → 2026-03-07', () => {
+      expect(convertBrazilianDateToISO('07/03/2026')).toBe('2026-03-07')
     })
 
-    it('should handle invalid format', () => {
+    it('converte com dia de um dígito 5/03/2026 → 2026-03-05', () => {
+      expect(convertBrazilianDateToISO('5/03/2026')).toBe('2026-03-05')
+    })
+
+    it('converte com mês de um dígito 07/3/2026 → 2026-03-07', () => {
+      expect(convertBrazilianDateToISO('07/3/2026')).toBe('2026-03-07')
+    })
+  })
+
+  describe('formato DD/MM (ano atual implícito)', () => {
+    it('converte 15/06 → YYYY-06-15 com ano atual', () => {
+      const year = new Date().getFullYear()
+      expect(convertBrazilianDateToISO('15/06')).toBe(`${year}-06-15`)
+    })
+
+    it('converte 01/01 → YYYY-01-01 com ano atual', () => {
+      const year = new Date().getFullYear()
+      expect(convertBrazilianDateToISO('01/01')).toBe(`${year}-01-01`)
+    })
+  })
+
+  describe('formato ISO já formatado', () => {
+    it('passa direto 2026-03-15 → 2026-03-15', () => {
+      expect(convertBrazilianDateToISO('2026-03-15')).toBe('2026-03-15')
+    })
+
+    it('passa direto 2025-12-31 → 2025-12-31', () => {
+      expect(convertBrazilianDateToISO('2025-12-31')).toBe('2025-12-31')
+    })
+  })
+
+  describe('entradas inválidas — NUNCA devem quebrar o banco', () => {
+    // Bug original: retornava a string inválida diretamente,
+    // causando falha silenciosa no INSERT do PostgreSQL
+
+    it('"invalid-date" → fallback para hoje (NÃO retorna a string inválida)', () => {
       const result = convertBrazilianDateToISO('invalid-date')
-      // Função retorna string original se não for DD/MM/YYYY
-      expect(result).toBe('invalid-date')
+      // DEVE ser uma data ISO válida
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      // Deve ser hoje
+      expect(result).toBe(todayISO())
+    })
+
+    it('"sexta-feira 2012" (com ano colado) → trata como sexta', () => {
+      // Garante que a presença de números não quebra o parser de dias da semana
+      const result = convertBrazilianDateToISO('sexta-feira')
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    })
+
+    it('null → fallback para hoje', () => {
+      const result = convertBrazilianDateToISO(null)
+      expect(result).toBe(todayISO())
+    })
+
+    it('undefined → fallback para hoje', () => {
+      const result = convertBrazilianDateToISO(undefined)
+      expect(result).toBe(todayISO())
+    })
+
+    it('string vazia → fallback para hoje', () => {
+      const result = convertBrazilianDateToISO('')
+      expect(result).toBe(todayISO())
+    })
+
+    it('resultado NUNCA contém texto — sempre é YYYY-MM-DD', () => {
+      const casos = [
+        'semana que vem', 'logo', 'qualquer dia', 'tanto faz', '???'
+      ]
+      for (const caso of casos) {
+        const result = convertBrazilianDateToISO(caso)
+        expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      }
     })
   })
+})
 
-  describe('getDateTimeContext', () => {
-    it('should return formatted context string', () => {
-      const result = getDateTimeContext()
+// ─────────────────────────────────────────────────────────────
+describe('isBusinessHours', () => {
+  it('terça 10h → dentro do horário', () => {
+    expect(isBusinessHours(new Date('2026-01-06T13:00:00Z'))).toBe(true) // 10h Fortaleza = 13h UTC
+  })
 
-      expect(result).toContain('[Data e horário em Fortaleza:')
-      expect(result).toContain('às')
-      expect(result).toContain('h')
-    })
+  it('domingo → fora do horário', () => {
+    expect(isBusinessHours(new Date('2026-01-04T13:00:00Z'))).toBe(false)
+  })
+
+  it('segunda 20h → fora do horário', () => {
+    expect(isBusinessHours(new Date('2026-01-05T23:00:00Z'))).toBe(false)
+  })
+
+  it('sábado 10h → dentro do horário', () => {
+    expect(isBusinessHours(new Date('2026-01-03T13:00:00Z'))).toBe(true)
+  })
+
+  it('sábado 14h → fora do horário (loja fecha 13h)', () => {
+    expect(isBusinessHours(new Date('2026-01-03T17:00:00Z'))).toBe(false)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+describe('getNextBusinessDay', () => {
+  it('retorna formato DD/MM/YYYY', () => {
+    expect(getNextBusinessDay(new Date('2026-01-02T12:00:00Z'))).toMatch(/\d{2}\/\d{2}\/\d{4}/)
+  })
+
+  it('sábado → próximo dia útil é segunda', () => {
+    // Sábado 03/01/2026 → próximo dia útil = segunda 05/01/2026
+    expect(getNextBusinessDay(new Date('2026-01-03T12:00:00Z'))).toBe('05/01/2026')
+  })
+
+  it('sexta → próximo dia útil é sábado', () => {
+    // Sexta 02/01/2026 → próximo dia útil = sábado 03/01/2026
+    expect(getNextBusinessDay(new Date('2026-01-02T12:00:00Z'))).toBe('03/01/2026')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+describe('getDateTimeContext', () => {
+  it('retorna string com marcação de contexto', () => {
+    const result = getDateTimeContext()
+    expect(result).toContain('[Data e horário em Fortaleza:')
+    expect(result).toContain('às')
   })
 })

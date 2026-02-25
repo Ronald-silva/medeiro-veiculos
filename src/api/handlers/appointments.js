@@ -608,9 +608,14 @@ export async function scheduleVisit(params) {
       };
     }
 
-    // Fallback se Supabase não estiver disponível
+    // Supabase indisponível ou falha ao salvar → erro real, não mascarar
     if (!dbResult.success) {
-      logger.info('Appointment logged (Supabase unavailable):', appointmentData);
+      logger.error('Appointment save failed:', { reason: dbResult.reason, error: dbResult.error });
+      return {
+        success: false,
+        error: dbResult.reason || 'save_failed',
+        message: 'Tive um problema ao confirmar seu agendamento. Pode me passar seu WhatsApp para o Adel entrar em contato?'
+      };
     }
 
     return {
@@ -619,11 +624,10 @@ export async function scheduleVisit(params) {
     };
   } catch (error) {
     logger.error('Error in scheduleVisit:', error);
-
-    // Mesmo com erro, confirma pro usuário para não prejudicar a experiência
     return {
-      success: true,
-      message: `Anotado! O ${STORE_INFO.sellerName} estará esperando você. Qualquer dúvida é só me chamar aqui!`
+      success: false,
+      error: 'unexpected_error',
+      message: 'Tive um problema inesperado. Pode me passar seu WhatsApp para o Adel entrar em contato diretamente com você?'
     };
   }
 }

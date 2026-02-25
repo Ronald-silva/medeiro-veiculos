@@ -1,7 +1,7 @@
 // Webhook handler para Twilio WhatsApp
 import { AGENT_SYSTEM_PROMPT, TOOL_DEFINITIONS } from '../../src/constants/agentPrompts.js'
 import Anthropic from '@anthropic-ai/sdk'
-import { saveConversation, getConversation } from '../../src/lib/upstash.js'
+import { saveConversation, getConversation, acquireLock } from '../../src/lib/upstash.js'
 import logger from '../../src/lib/logger.js'
 import twilio from 'twilio'
 
@@ -90,21 +90,19 @@ async function persistToSupabase(phone, userMessage, assistantMessage, responseT
     const dbConversationId = await getOrCreateConversation(phone)
     if (!dbConversationId) return
 
-    // Salva ambas em paralelo
-    await Promise.all([
-      saveMessage({
-        conversationId: dbConversationId,
-        role: 'user',
-        content: userMessage
-      }),
-      saveMessage({
-        conversationId: dbConversationId,
-        role: 'assistant',
-        content: assistantMessage,
-        responseTimeMs,
-        toolName: toolCalled || null
-      })
-    ])
+    // Salva sequencialmente para garantir ordem correta (user antes de assistant)
+    await saveMessage({
+      conversationId: dbConversationId,
+      role: 'user',
+      content: userMessage
+    })
+    await saveMessage({
+      conversationId: dbConversationId,
+      role: 'assistant',
+      content: assistantMessage,
+      responseTimeMs,
+      toolName: toolCalled || null
+    })
 
     logger.debug('[Twilio] Persisted to Supabase in background')
   } catch (error) {
@@ -234,55 +232,54 @@ async function processCamilaMessage(userMessage, conversationId, clientInfo = {}
     })
 
     let assistantMessage
-    let toolCalled = null
     let vehicleImages = []
+    const toolsCalledNames = []
 
-    // Se Claude quis usar tool(s)
-    if (response.stop_reason === 'tool_use') {
-      const toolUses = response.content.filter(block => block.type === 'tool_use')
+    // Loop de tool use com limite de iterações (evita loop infinito e captura recursão)
+    const MAX_TOOL_ITERATIONS = 3
+    let currentMessages = messages
+    let currentResponse = response
+    let toolIteration = 0
 
-      if (toolUses.length > 0) {
-        logger.info(`[Twilio] Claude tool use: ${toolUses.length} tool(s) requested`)
+    while (currentResponse.stop_reason === 'tool_use' && toolIteration < MAX_TOOL_ITERATIONS) {
+      const toolUses = currentResponse.content.filter(block => block.type === 'tool_use')
+      if (toolUses.length === 0) break
 
-        // Processa TODAS as tools usando handler compartilhado
-        const toolResults = await processClaudeToolUses(toolUses, conversationId)
+      logger.info(`[Twilio] Tool iteration ${toolIteration + 1}/${MAX_TOOL_ITERATIONS}: ${toolUses.map(t => t.name).join(', ')}`)
 
-        // Extrai imagens de veículos se recommend_vehicles foi chamada
-        vehicleImages = extractVehicleImages(toolUses, toolResults)
+      const toolResults = await processClaudeToolUses(toolUses, conversationId)
 
-        // Chama Claude novamente com TODOS os resultados
-        const messagesWithToolResult = [
-          ...messages,
-          {
-            role: 'assistant',
-            content: response.content
-          },
-          {
-            role: 'user',
-            content: toolResults
-          }
-        ]
+      // Acumula imagens de veículos de recommend_vehicles
+      const iterImages = extractVehicleImages(toolUses, toolResults)
+      if (iterImages.length > 0) vehicleImages = iterImages
 
-        logger.debug(`[Twilio] Sending ${messagesWithToolResult.length} messages to Claude after tool execution`)
+      toolsCalledNames.push(...toolUses.map(t => t.name))
 
-        const finalResponse = await anthropic.messages.create({
-          model: selectedModel,
-          max_tokens: maxTokens,
-          temperature: CONFIG.temperature,
-          system: AGENT_SYSTEM_PROMPT,
-          messages: messagesWithToolResult,
-          tools: claudeTools
-        })
+      currentMessages = [
+        ...currentMessages,
+        { role: 'assistant', content: currentResponse.content },
+        { role: 'user', content: toolResults }
+      ]
 
-        const textBlock = finalResponse.content.find(block => block.type === 'text')
-        assistantMessage = textBlock?.text || 'Como posso te ajudar? 😊'
-        toolCalled = toolUses.map(t => t.name).join(', ')
-      }
-    } else {
-      // Resposta normal sem tool use
-      const textBlock = response.content.find(block => block.type === 'text')
-      assistantMessage = textBlock?.text || response.content[0].text
+      currentResponse = await anthropic.messages.create({
+        model: selectedModel,
+        max_tokens: maxTokens,
+        temperature: CONFIG.temperature,
+        system: AGENT_SYSTEM_PROMPT,
+        messages: currentMessages,
+        tools: claudeTools
+      })
+
+      toolIteration++
     }
+
+    if (toolIteration >= MAX_TOOL_ITERATIONS && currentResponse.stop_reason === 'tool_use') {
+      logger.warn(`[Twilio] Max tool iterations (${MAX_TOOL_ITERATIONS}) reached, using last available text`)
+    }
+
+    const textBlock = currentResponse.content.find(block => block.type === 'text')
+    assistantMessage = textBlock?.text || 'Como posso te ajudar? 😊'
+    const toolCalled = toolsCalledNames.length > 0 ? toolsCalledNames.join(', ') : null
 
     // ============================================
     // 3. SALVAR E RETORNAR IMEDIATAMENTE
@@ -440,6 +437,15 @@ async function processMessageAsync(webhookData) {
 
   try {
     logger.info('[Twilio] ASYNC processing started')
+
+    // Deduplicação por MessageSid — evita processar duas vezes se Twilio reenviar o webhook
+    if (messageSid) {
+      const acquired = await acquireLock(`msg:${messageSid}`, 60)
+      if (!acquired) {
+        logger.warn(`[Twilio] Duplicate webhook detected (${messageSid}), skipping`)
+        return
+      }
+    }
 
     // Marca mensagem como lida (✓✓ azul) — feedback visual imediato ao cliente
     if (messageSid) {

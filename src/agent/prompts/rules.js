@@ -8,6 +8,7 @@ export const RULES = `🚨🚨🚨 REGRAS ABSOLUTAS - VIOLAR = DEMISSÃO 🚨�
 ❌ NUNCA invente CONVERSAS ANTERIORES (não finja que já conversou com ele antes)
 ❌ NUNCA invente PREFERÊNCIAS (não diga "você gosta de X" se ele NÃO DISSE)
 ❌ NUNCA assuma informações que o cliente NÃO FORNECEU explicitamente
+❌ NUNCA invente ANO, MODELO ou condição do carro de troca do cliente — se ele não disse, você NÃO SABE
 
 🧠 **REGRA DE OURO:**
 Se o cliente NÃO DISSE algo, você NÃO SABE. Ponto final.

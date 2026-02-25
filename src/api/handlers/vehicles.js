@@ -99,15 +99,21 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
         .replace(/\s+/g, ' ');
 
       const termKey = stripped.toLowerCase();
-      const resolvedTerm = synonyms[termKey] || synonyms[searchTerm.toLowerCase()] || stripped || searchTerm;
+      const resolvedTerm = synonyms[termKey] || synonyms[searchTerm.toLowerCase()] || stripped;
 
       // Busca por cada palavra-chave relevante (OR entre elas)
       const keywords = resolvedTerm.split(/\s+/).filter(w => w.length >= 2);
-      const conditions = keywords
-        .map(k => `name.ilike.%${k}%,model.ilike.%${k}%,brand.ilike.%${k}%`)
-        .join(',');
 
-      query = query.or(conditions);
+      if (keywords.length === 0) {
+        // searchTerm era só ano/versão → busca por orçamento sem filtro de nome
+        logger.warn('[recommend_vehicles] searchTerm filtrou para vazio, buscando por orçamento:', searchTerm);
+        query = query.lte('price', maxBudget);
+      } else {
+        const conditions = keywords
+          .map(k => `name.ilike.%${k}%,model.ilike.%${k}%,brand.ilike.%${k}%`)
+          .join(',');
+        query = query.or(conditions);
+      }
     } else {
       query = query.lte('price', maxBudget);
     }
