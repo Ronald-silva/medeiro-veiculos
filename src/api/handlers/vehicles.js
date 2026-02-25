@@ -80,17 +80,34 @@ async function fetchVehiclesFromSupabase(maxBudget, limit = 3, vehicleTypes = nu
 
     // Se tem busca por nome, não limita por preço (cliente quer ver um carro específico)
     if (searchTerm) {
-      // Sinônimos comuns (cliente pode usar nome diferente do cadastrado)
+      // Sinônimos: mapeia nomes populares para como está no banco
       const synonyms = {
-        'hilux': 'SW4', 'sw-4': 'SW4',
+        'hilux': 'SW4', 'sw-4': 'SW4', 'hilux sw4': 'SW4', 'toyota sw4': 'SW4',
         'pajeiro': 'Pajero', 'pagero': 'Pajero',
         'hr v': 'HR-V', 'hrv': 'HR-V',
         'l-200': 'L200', 'triton': 'L200',
         'cg': 'CG', 'titan': 'CG',
         'spacefox': 'Spacefox', 'space fox': 'Spacefox'
       };
-      const term = synonyms[searchTerm.toLowerCase()] || searchTerm;
-      query = query.or(`name.ilike.%${term}%,model.ilike.%${term}%,brand.ilike.%${term}%`);
+
+      // Remove ano (4 dígitos) e palavras genéricas do searchTerm
+      // "Hilux SW4 2012" → "Hilux SW4" → tenta sinônimo → "SW4"
+      const stripped = searchTerm
+        .replace(/\b\d{4}\b/g, '')       // remove anos (2012, 2024...)
+        .replace(/\b(diesel|flex|gasolina|automático|automatico|manual|turbo|4x4|4x2|srv|srx|srw|limited|sport|adventure)\b/gi, '')
+        .trim()
+        .replace(/\s+/g, ' ');
+
+      const termKey = stripped.toLowerCase();
+      const resolvedTerm = synonyms[termKey] || synonyms[searchTerm.toLowerCase()] || stripped || searchTerm;
+
+      // Busca por cada palavra-chave relevante (OR entre elas)
+      const keywords = resolvedTerm.split(/\s+/).filter(w => w.length >= 2);
+      const conditions = keywords
+        .map(k => `name.ilike.%${k}%,model.ilike.%${k}%,brand.ilike.%${k}%`)
+        .join(',');
+
+      query = query.or(conditions);
     } else {
       query = query.lte('price', maxBudget);
     }

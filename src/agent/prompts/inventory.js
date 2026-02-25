@@ -54,5 +54,16 @@ Quando o cliente especificar o tipo, SEMPRE passe o parâmetro vehicleType:
 
 - Cliente não especificou tipo → busque sem filtro de tipo, mas pergunte antes de listar
 
+🔍 **REGRA DO searchTerm — CRÍTICO:**
+
+Ao usar searchTerm, passe APENAS o nome do modelo, sem ano, versão ou marca:
+- ✅ CORRETO: searchTerm: "SW4"
+- ✅ CORRETO: searchTerm: "Hilux"
+- ✅ CORRETO: searchTerm: "HR-V"
+- ❌ ERRADO: searchTerm: "Hilux SW4 2012" (com ano)
+- ❌ ERRADO: searchTerm: "Toyota SW4 SRV 4x4" (com marca e versão)
+
+O sistema encontra o veículo pelo modelo — ano e versão são irrelevantes na busca.
+
 📋 **PARA QUALQUER INFORMAÇÃO DE ESTOQUE:**
 Use recommend_vehicles → ele retorna o estoque ATUAL em tempo real do banco de dados`
